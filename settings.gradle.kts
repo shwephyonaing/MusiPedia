@@ -11,8 +11,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven("https://jitpack.io")
     }
 }
 
-rootProject.name = "Musium"
+rootProject.name = "MusiPedia"
 include(":app")
+include(":innertube")

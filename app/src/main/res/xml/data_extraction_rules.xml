@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="offline/" />
+        <exclude domain="sharedpref" path="musium_offline.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="offline/" />
+        <exclude domain="sharedpref" path="musium_offline.xml" />
+    </device-transfer>
+</data-extraction-rules>
