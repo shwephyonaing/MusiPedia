@@ -31,6 +31,13 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
         private set
     var sleepRemaining by mutableLongStateOf(0L)
         private set
+    fun release() {
+        radioJob?.cancel()
+        sleepUiJob?.cancel()
+        runCatching { service.player.removeListener(this) }
+    }
+
+    private var radioJob: Job? = null
     private var sleepUiJob: Job? = null
 
     val player: Player get() = service.player
@@ -52,15 +59,29 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
         }
     }
 
-    fun release() {
-        sleepUiJob?.cancel()
-        runCatching { service.player.removeListener(this) }
-    }
-
     fun play(songs: List<PlayableSong>, index: Int = 0) {
         lastError = null
+        radioJob?.cancel()
         PlayLog.d("ui play index=$index size=${songs.size} first=${songs.getOrNull(index)?.title}")
         service.playQueue(OfflineDownloads.attachAll(songs), index)
+        refresh()
+    }
+
+    /** Play one song, then append YouTube radio / related tracks. */
+    fun playSong(song: PlayableSong) {
+        lastError = null
+        radioJob?.cancel()
+        PlayLog.d("ui playSong id=${song.id} title=${song.title}")
+        service.playQueue(OfflineDownloads.attachAll(listOf(song)), 0)
+        refresh()
+        if (song.isLocal) return
+        radioJob = service.scope.launch {
+            val related = runCatching { MusicRepository.related(song.id) }.getOrDefault(emptyList())
+            if (related.isEmpty()) return@launch
+            if (service.currentSong()?.id != song.id) return@launch
+            service.appendToQueue(OfflineDownloads.attachAll(related))
+            refresh()
+        }
     }
 
     fun togglePlay() {
@@ -88,6 +109,17 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
     fun playAt(index: Int) {
         lastError = null
         service.playAt(index)
+    }
+
+    fun addToQueue(song: PlayableSong) {
+        lastError = null
+        service.addToQueue(song)
+        refresh()
+    }
+
+    fun moveInQueue(from: Int, to: Int) {
+        service.moveInQueue(from, to)
+        refresh()
     }
 
     fun removeFromQueue(index: Int) {

@@ -581,5 +581,5 @@ private fun String.isYoutubeVideoId(): Boolean =
 
 private fun String.upgradeArtwork(): String? {
     if (isBlank()) return null
-    return replace("100x100", "600x600").replace("60x60", "600x600")
+    return hdArtwork()
 }

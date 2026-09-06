@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -58,6 +59,7 @@ internal fun LocalMusicLibrary() {
     var songs by remember { mutableStateOf<List<LocalSong>>(emptyList()) }
     var recents by remember { mutableStateOf<List<PlayableSong>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<PlayableSong?>(null) }
     val requestPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { allowed = it }
     val recentsStore = (context.applicationContext as? MusiumApplication)?.recentStore
 
@@ -72,8 +74,9 @@ internal fun LocalMusicLibrary() {
         }
     }
 
+    Box(Modifier.fillMaxSize().background(PlayerBlack)) {
     LazyColumn(
-        Modifier.fillMaxSize().background(PlayerBlack).safeDrawingPadding(),
+        Modifier.fillMaxSize().safeDrawingPadding(),
         contentPadding = PaddingValues(top = 54.dp, bottom = 170.dp),
     ) {
         item {
@@ -107,7 +110,7 @@ internal fun LocalMusicLibrary() {
                                 modifier = Modifier.size(20.dp),
                             )
                         }
-                        IconButton(onClick = { OfflineDownloads.delete(song.id) }) {
+                        IconButton(onClick = { pendingDelete = song }) {
                             Icon(Icons.Outlined.Close, "Remove download", tint = Color(0xFF9FAEB1))
                         }
                     },
@@ -136,6 +139,17 @@ internal fun LocalMusicLibrary() {
                 }
             }
         }
+    }
+    pendingDelete?.let { song ->
+        DeleteDownloadConfirmDialog(
+            songTitle = song.title,
+            onConfirm = {
+                OfflineDownloads.delete(song.id)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null },
+        )
+    }
     }
 }
 

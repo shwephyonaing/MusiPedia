@@ -6,6 +6,8 @@ import com.musium.innertube.Innertube
 import com.musium.innertube.Lyrics
 import com.musium.innertube.SearchPage
 import com.musium.innertube.SongItem
+import com.musium.innertube.hdArtwork
+import com.musium.innertube.youtubeThumb
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -23,6 +25,10 @@ object MusicRepository {
     )
     @Volatile private var cachedHome: List<HomeSection>? = null
 
+    fun clearHomeCache() {
+        cachedHome = null
+    }
+
     suspend fun search(query: String): SearchPage = withContext(Dispatchers.IO) {
         client.search(query)
     }
@@ -32,9 +38,14 @@ object MusicRepository {
     }
 
     fun homeFeed(recent: List<PlayableSong> = emptyList(), force: Boolean = false): Flow<List<HomeSection>> = flow {
-        if (!force) cachedHome?.let { emit(it); return@flow }
+            val hit = cachedHome?.takeIf { !force && it.hasContent() }
+            if (hit != null) {
+                emit(hit)
+                return@flow
+            }
+            cachedHome = null
 
-        coroutineScope {
+            coroutineScope {
             // Apple chart is cheap; resolve YouTube IDs in parallel with For You mixes.
             val chartHits = async {
                 runCatching { client.appleMostPlayed(10, chartCountry = "mm") }.getOrDefault(emptyList())
@@ -49,7 +60,7 @@ object MusicRepository {
                         }.getOrNull()?.copy(
                             title = first.title,
                             subtitle = first.artist,
-                            thumbnail = first.artwork,
+                            thumbnail = first.artwork?.hdArtwork() ?: first.artwork,
                         ),
                     )
                 }
@@ -72,7 +83,8 @@ object MusicRepository {
                 forYou.takeIf { it.isNotEmpty() }?.let { HomeSection("For You", it) },
                 trending.takeIf { it.isNotEmpty() }?.let { HomeSection("Trending", it) },
             )
-            cachedHome = sections
+            // Never cache empty home — offline failures would stick forever in-process.
+            if (sections.hasContent()) cachedHome = sections
             emit(sections)
         }
     }.flowOn(Dispatchers.IO)
@@ -99,6 +111,13 @@ object MusicRepository {
         client.lyrics(videoId)
     }
 
+    suspend fun related(videoId: String): List<PlayableSong> = withContext(Dispatchers.IO) {
+        if (videoId.isBlank() || videoId.startsWith("local:")) return@withContext emptyList()
+        client.relatedSongs(videoId, youtubeOnly = true)
+            .map { it.toPlayable() }
+            .filter { it.id != videoId }
+    }
+
     private suspend fun resolveChartHits(hits: List<com.musium.innertube.ChartTrack>): List<SongItem> {
         if (hits.isEmpty()) {
             return runCatching { client.ytmCharts() }.getOrDefault(emptyList()).take(10)
@@ -108,11 +127,15 @@ object MusicRepository {
                 async {
                     runCatching { client.findSong("${hit.title} ${hit.artist}", youtubeOnly = true) }
                         .getOrNull()
-                        ?.copy(
-                            title = hit.title,
-                            subtitle = hit.artist,
-                            thumbnail = hit.artwork,
-                        )
+                        ?.let { song ->
+                            song.copy(
+                                title = hit.title,
+                                subtitle = hit.artist,
+                                thumbnail = hit.artwork?.hdArtwork()
+                                    ?: song.thumbnail?.hdArtwork()
+                                    ?: youtubeThumb(song.id),
+                            )
+                        }
                 }
             }.awaitAll().filterNotNull()
         }
@@ -144,6 +167,8 @@ object MusicRepository {
         return out.values.toList()
     }
 }
+
+private fun List<HomeSection>.hasContent(): Boolean = any { it.items.isNotEmpty() }
 
 private fun PlayableSong.toSongItem() = SongItem(
     id = id,

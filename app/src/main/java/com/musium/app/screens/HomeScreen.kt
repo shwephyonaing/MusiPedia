@@ -23,6 +23,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,12 +41,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import coil.compose.AsyncImage
 import com.musium.innertube.AlbumItem
 import com.musium.innertube.HomeSection
 import com.musium.innertube.PlaylistItem
 import com.musium.innertube.SongItem
 import com.musium.innertube.YtItem
+import com.musium.innertube.hdArtwork
+import com.musium.innertube.youtubeThumb
 
 private val Cyan = Color(0xFF42E4CE)
 private val Page = Color(0xFFFAFAF8)
@@ -65,7 +72,9 @@ internal fun HomeContent() {
     val router = LocalMusicRouter.current
     val context = LocalContext.current
     val recentsStore = (context.applicationContext as? MusiumApplication)?.recentStore
+    val favoriteStore = (context.applicationContext as? MusiumApplication)?.favoriteStore
     var recents by remember { mutableStateOf(recentsStore?.songs().orEmpty()) }
+    var favorites by remember { mutableStateOf(favoriteStore?.songs().orEmpty()) }
     var state by remember { mutableStateOf<HomeUi>(HomeUi.Loading) }
     var reload by remember { mutableStateOf(0) }
     val downloads = (OfflineDownloads.inFlight.values + OfflineDownloads.songs).distinctBy { it.id }
@@ -73,17 +82,23 @@ internal fun HomeContent() {
 
     LaunchedEffect(player?.current?.id, player?.playing) {
         recents = recentsStore?.songs().orEmpty()
+        favorites = favoriteStore?.songs().orEmpty()
     }
     LaunchedEffect(Unit) {
         val seeds = recentsStore?.songs().orEmpty().take(5)
         runCatching {
             MusicRepository.homeFeed(seeds, force = false).collect { sections ->
-                state = HomeUi.Ready(sections)
+                if (sections.any { it.items.isNotEmpty() }) {
+                    state = HomeUi.Ready(sections)
+                }
             }
         }.onFailure {
             if (state !is HomeUi.Ready) {
                 state = HomeUi.Error(it.message ?: "Unable to load charts")
             }
+        }
+        if (state !is HomeUi.Ready) {
+            state = HomeUi.Error("Couldn't load home. Check your connection and retry.")
         }
     }
     LaunchedEffect(reload) {
@@ -92,28 +107,73 @@ internal fun HomeContent() {
         val seeds = recentsStore?.songs().orEmpty().take(5)
         runCatching {
             MusicRepository.homeFeed(seeds, force = true).collect { sections ->
-                state = HomeUi.Ready(sections)
+                if (sections.any { it.items.isNotEmpty() }) {
+                    state = HomeUi.Ready(sections)
+                }
             }
         }.onFailure {
             state = HomeUi.Error(it.message ?: "Unable to load charts")
         }
+        if (state !is HomeUi.Ready) {
+            state = HomeUi.Error("Couldn't load home. Check your connection and retry.")
+        }
+    }
+    DisposableEffect(context) {
+        val manager = context.getSystemService(ConnectivityManager::class.java)
+        if (manager == null) {
+            return@DisposableEffect onDispose { }
+        }
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                val caps = manager.getNetworkCapabilities(network) ?: return
+                if (!caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) return
+                // Refresh after offline/empty home once network returns.
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    val current = state
+                    val needsRefresh = current is HomeUi.Error ||
+                        (current is HomeUi.Ready && current.sections.none { it.items.isNotEmpty() })
+                    if (needsRefresh) {
+                        MusicRepository.clearHomeCache()
+                        reload += 1
+                    }
+                }
+            }
+        }
+        runCatching {
+            manager.registerNetworkCallback(
+                NetworkRequest.Builder()
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .build(),
+                callback,
+            )
+        }
+        onDispose { runCatching { manager.unregisterNetworkCallback(callback) } }
     }
 
     val ready = state as? HomeUi.Ready
     val forYou = ready?.named("For You")
     val trending = ready?.named("Trending")
+    val nowPlaying = player?.current?.takeIf { player.playing }
     val returning = lastListened != null
-    val hero = if (returning) {
-        lastListened.toFeaturedItem()
-    } else {
-        listOfNotNull(trending?.firstOrNull(), forYou?.firstOrNull())
+    val hero = when {
+        nowPlaying != null -> nowPlaying.toFeaturedItem()
+        returning -> lastListened.toFeaturedItem()
+        else -> listOfNotNull(trending?.firstOrNull(), forYou?.firstOrNull())
             .firstOrNull { !it.thumbnail.isNullOrBlank() }
             ?: trending?.firstOrNull()
             ?: forYou?.firstOrNull()
     }
-    val heroMode = if (returning) HeroMode.LastPlayed else HeroMode.Featured
+    val heroMode = when {
+        nowPlaying != null -> HeroMode.PlayingNow
+        returning -> HeroMode.LastPlayed
+        else -> HeroMode.Featured
+    }
     val heroMeta = hero?.subtitle?.prettyTitle()?.takeIf { it.isNotBlank() }
-        ?: if (returning) "Continue listening" else "Trending now"
+        ?: when (heroMode) {
+            HeroMode.PlayingNow -> "Now on MusiPedia"
+            HeroMode.LastPlayed -> "Continue listening"
+            HeroMode.Featured -> "Trending now"
+        }
 
     Box(Modifier.fillMaxSize().background(Page)) {
         LazyColumn(
@@ -125,11 +185,12 @@ internal fun HomeContent() {
                     item = hero,
                     mode = heroMode,
                     meta = heroMeta,
+                    enabled = heroMode != HeroMode.PlayingNow,
                 ) {
-                    if (returning) {
-                        player?.play(recents, 0)
-                    } else {
-                        hero?.open(player, router, (trending.songs() + forYou.songs()).distinctBy { it.id })
+                    when {
+                        nowPlaying != null -> Unit
+                        returning -> player?.play(recents, 0)
+                        else -> hero?.open(player, router)
                     }
                 }
             }
@@ -141,7 +202,18 @@ internal fun HomeContent() {
                 }
             }
             item { SectionTitle("For You", Modifier.padding(top = 18.dp)) }
-            item { PosterRow(forYou, placeholders = 8) { item -> item.open(player, router, forYou.songs()) } }
+            item { PosterRow(forYou, placeholders = 8) { item -> item.open(player, router) } }
+            if (favorites.size > 1) {
+                item {
+                    SectionTitleRow(
+                        title = "Favorites",
+                        action = "Show All",
+                        onAction = { router(MusicRoute.Favorites) },
+                        modifier = Modifier.padding(top = 22.dp),
+                    )
+                }
+                item { FavoritesRow(preview = favorites.take(5), queue = favorites, player = player) }
+            }
             if (downloads.isNotEmpty()) {
                 item {
                     SectionTitleRow(
@@ -154,7 +226,7 @@ internal fun HomeContent() {
                 item { DownloadsRow(downloads.take(5), player) }
             }
             item { SectionTitle("Trending", Modifier.padding(top = 22.dp)) }
-            item { PosterRow(trending, placeholders = 10) { item -> item.open(player, router, trending.songs()) } }
+            item { PosterRow(trending, placeholders = 10) { item -> item.open(player, router) } }
         }
     }
 }
@@ -178,31 +250,50 @@ private fun PlayableSong.toFeaturedItem() = SongItem(
     albumId = albumId,
 )
 
-private enum class HeroMode { Featured, LastPlayed }
+private enum class HeroMode { Featured, LastPlayed, PlayingNow }
 
 @Composable
-private fun FeaturedHero(item: YtItem?, mode: HeroMode, meta: String, onOpen: () -> Unit) {
+private fun FeaturedHero(
+    item: YtItem?,
+    mode: HeroMode,
+    meta: String,
+    enabled: Boolean = true,
+    onOpen: () -> Unit,
+) {
     val badge = when (mode) {
         HeroMode.Featured -> "Featured"
         HeroMode.LastPlayed -> "Last Played"
+        HeroMode.PlayingNow -> "Now Playing"
     }
     Box(
         Modifier
             .fillMaxWidth()
             .aspectRatio(414f / 463f)
             .background(Color(0xFF0B0B0B))
-            .clickable(enabled = item != null, onClick = onOpen),
+            .clickable(enabled = enabled && item != null, onClick = onOpen),
         contentAlignment = Alignment.Center,
     ) {
-        if (item?.thumbnail.isNullOrBlank()) {
+        if (item?.thumbnail.isNullOrBlank() && item !is SongItem) {
             BrandMark(Modifier.height(92.dp).width(104.dp), Cyan)
         } else {
-            AsyncImage(
-                item.thumbnail,
-                null,
-                Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
+            val primary = item?.thumbnail?.hdArtwork()
+                ?: (item as? SongItem)?.id?.takeIf { it.length == 11 }?.let { youtubeThumb(it) }
+            val fallback = (item as? SongItem)?.id?.takeIf { it.length == 11 }?.let { youtubeThumb(it, hd = false) }
+                ?: item?.thumbnail
+            var model by remember(primary, fallback) { mutableStateOf(primary ?: fallback) }
+            if (model.isNullOrBlank()) {
+                BrandMark(Modifier.height(92.dp).width(104.dp), Cyan)
+            } else {
+                AsyncImage(
+                    model = model,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    onError = {
+                        if (fallback != null && model != fallback) model = fallback
+                    },
+                )
+            }
         }
         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.28f)))
         Box(
@@ -293,6 +384,29 @@ private fun LogoCard() {
         }
         Text(" ", Modifier.padding(top = 8.dp), fontSize = 15.sp)
         Text(" ", Modifier.padding(top = 2.dp), fontSize = 12.sp)
+    }
+}
+
+@Composable
+private fun FavoritesRow(
+    preview: List<PlayableSong>,
+    queue: List<PlayableSong>,
+    player: PlayerConnection?,
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 26.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        items(preview, key = { "fav-${it.id}" }) { song ->
+            PosterCard(
+                image = song.thumbnailUrl,
+                title = song.title.prettyTitle(),
+                subtitle = song.artist.prettyTitle().ifBlank { "Favorite" },
+                onClick = {
+                    player?.play(queue, queue.indexOfFirst { it.id == song.id }.coerceAtLeast(0))
+                },
+            )
+        }
     }
 }
 

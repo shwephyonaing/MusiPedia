@@ -7,19 +7,20 @@
     <path
         android:fillColor="#FF0B0B0B"
         android:pathData="M0,0h108v108h-108z" />
+    <!-- Bars centered in 108 viewport (74px wide → start at 17) -->
     <path
         android:fillColor="#FF00C2CB"
-        android:pathData="M23,32a5,5 0 0,1 10,0v44a5,5 0 0,1 -10,0z" />
+        android:pathData="M17,32a5,5 0 0,1 10,0v44a5,5 0 0,1 -10,0z" />
     <path
         android:fillColor="#FF00C2CB"
-        android:pathData="M39,51.3a5,5 0 0,1 10,0v24.7a5,5 0 0,1 -10,0z" />
+        android:pathData="M33,51.3a5,5 0 0,1 10,0v24.7a5,5 0 0,1 -10,0z" />
     <path
         android:fillColor="#FF00C2CB"
-        android:pathData="M55,62.6a5,5 0 0,1 10,0v13.4a5,5 0 0,1 -10,0z" />
+        android:pathData="M49,62.6a5,5 0 0,1 10,0v13.4a5,5 0 0,1 -10,0z" />
     <path
         android:fillColor="#FF00C2CB"
-        android:pathData="M71,48.7a5,5 0 0,1 10,0v27.3a5,5 0 0,1 -10,0z" />
+        android:pathData="M65,48.7a5,5 0 0,1 10,0v27.3a5,5 0 0,1 -10,0z" />
     <path
         android:fillColor="#FF00C2CB"
-        android:pathData="M87,32a5,5 0 0,1 10,0v44a5,5 0 0,1 -10,0z" />
+        android:pathData="M81,32a5,5 0 0,1 10,0v44a5,5 0 0,1 -10,0z" />
 </vector>

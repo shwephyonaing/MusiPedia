@@ -19,7 +19,7 @@ class MusiumApplication : Application() {
         recentStore = RecentStore(this)
         downloadStore = DownloadStore(this)
         favoriteStore = FavoriteStore(this)
-        OfflineDownloads.initialize(downloadStore, appScope)
+        OfflineDownloads.initialize(downloadStore, appScope, this)
         StreamResolver.initialize()
     }
 }

@@ -1,6 +1,7 @@
 package com.musium.app
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,14 +11,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.QueueMusic
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.DownloadDone
@@ -27,11 +33,13 @@ import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Lyrics
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Pause
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.automirrored.outlined.QueueMusic
 import androidx.compose.material.icons.outlined.SkipNext
 import androidx.compose.material.icons.outlined.SkipPrevious
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -48,6 +56,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +71,9 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.musium.innertube.Lyrics
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 
 private val Cyan = Color(0xFF42E4CE)
@@ -71,6 +83,8 @@ private val Ink = Color(0xFF3F4944)
 @Composable
 internal fun FullPlayerScreen(onBack: () -> Unit) {
     val player = LocalPlayerConnection.current
+    val router = LocalMusicRouter.current
+    val scope = rememberCoroutineScope()
     val song = player?.current
     if (player == null || song == null) {
         Column(Modifier.fillMaxSize().background(Black).safeDrawingPadding().padding(28.dp)) {
@@ -86,8 +100,32 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     var showQueue by remember { mutableStateOf(false) }
     var showSleep by remember { mutableStateOf(false) }
     var showActions by remember { mutableStateOf(false) }
+    var openingArtist by remember { mutableStateOf(false) }
+    var confirmRemoveDownload by remember { mutableStateOf(false) }
     val favoriteStore = (LocalContext.current.applicationContext as? MusiumApplication)?.favoriteStore
     var favorite by remember(song.id) { mutableStateOf(favoriteStore?.contains(song.id) == true) }
+    val canOpenArtist = !song.isLocal && song.artist.isNotBlank() && song.artist != "YouTube Music"
+    fun openArtistProfile() {
+        if (!canOpenArtist || openingArtist) return
+        showActions = false
+        val knownId = song.artistId
+        if (!knownId.isNullOrBlank()) {
+            router(MusicRoute.Artist(knownId, song.artist, song.thumbnailUrl))
+            return
+        }
+        openingArtist = true
+        scope.launch {
+            val artist = runCatching {
+                withContext(Dispatchers.IO) {
+                    MusicRepository.search(song.artist).artists.firstOrNull()
+                }
+            }.getOrNull()
+            openingArtist = false
+            if (artist != null) {
+                router(MusicRoute.Artist(artist.id, artist.title, artist.thumbnail ?: song.thumbnailUrl))
+            }
+        }
+    }
     LaunchedEffect(song.id, player.playing, lyricsOn) {
         while (true) {
             if (!dragging) position = player.currentPosition()
@@ -100,7 +138,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     }
     val duration = player.duration.coerceAtLeast(1L)
     Column(Modifier.fillMaxSize().background(Black).safeDrawingPadding().padding(horizontal = 24.dp, vertical = 24.dp)) {
-        Box(Modifier.fillMaxWidth().height(340.dp)) {
+        Box(Modifier.fillMaxWidth().height(300.dp)) {
             if (lyricsOn && lyrics != null) {
                 LyricsPanel(
                     lyrics = lyrics!!,
@@ -115,7 +153,10 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                 AsyncImage(
                     model = song.thumbnailUrl,
                     contentDescription = song.title,
-                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(2.dp)).background(Color(0xFFF0F1EF)),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFFF0F1EF)),
                     contentScale = ContentScale.Crop,
                 )
             }
@@ -137,26 +178,39 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                 )
             }
         }
-        Row(Modifier.fillMaxWidth().padding(top = 18.dp), verticalAlignment = Alignment.Top) {
+        Row(Modifier.fillMaxWidth().padding(top = 16.dp), verticalAlignment = Alignment.Top) {
             Text(
                 song.title,
                 Modifier.weight(1f),
                 color = Ink,
-                fontSize = 27.sp,
-                lineHeight = 28.sp,
+                fontSize = 25.sp,
+                lineHeight = 27.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Serif,
                 maxLines = 2,
             )
             Box {
-                IconButton(onClick = {
-                    favorite = favoriteStore?.contains(song.id) == true
-                    showActions = true
-                }) {
-                    Icon(Icons.Outlined.MoreHoriz, "More", tint = Ink)
+                val downloading = song.id in OfflineDownloads.progressing
+                IconButton(
+                    onClick = {
+                        if (downloading) return@IconButton
+                        favorite = favoriteStore?.contains(song.id) == true
+                        showActions = true
+                    },
+                ) {
+                    if (downloading) {
+                        CircularProgressIndicator(
+                            progress = { OfflineDownloads.progress[song.id] ?: 0f },
+                            color = Cyan,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    } else {
+                        Icon(Icons.Outlined.MoreHoriz, "More", tint = Ink)
+                    }
                 }
                 DropdownMenu(
-                    expanded = showActions,
+                    expanded = showActions && !downloading,
                     onDismissRequest = { showActions = false },
                     modifier = Modifier.width(214.dp),
                     offset = DpOffset(x = (-174).dp, y = (-4).dp),
@@ -184,7 +238,15 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                                 )
                             },
                             contentPadding = PaddingValues(horizontal = 13.dp),
-                            onClick = { OfflineDownloads.toggle(song); showActions = false },
+                            onClick = {
+                                if (OfflineDownloads.has(song.id)) {
+                                    confirmRemoveDownload = true
+                                    showActions = false
+                                } else {
+                                    OfflineDownloads.download(song)
+                                    showActions = false
+                                }
+                            },
                         )
                         HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
                     }
@@ -211,6 +273,23 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                             showActions = false
                         },
                     )
+                    if (canOpenArtist) {
+                        HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
+                        DropdownMenuItem(
+                            modifier = Modifier.height(44.dp),
+                            text = { Text("Artist profile", color = Ink, fontSize = 12.sp) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Person,
+                                    null,
+                                    tint = Color(0xFF8B9490),
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            },
+                            contentPadding = PaddingValues(horizontal = 13.dp),
+                            onClick = { openArtistProfile() },
+                        )
+                    }
                     HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
                     if (lyrics != null) {
                         DropdownMenuItem(
@@ -246,14 +325,20 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                 }
             }
         }
-        Text("${formatTime(duration)}  ·  ${player.queue.size} Tracks", color = Color(0xFFA0A9A4), fontSize = 11.sp)
-        Row(
-            Modifier.fillMaxWidth().padding(top = 20.dp).clickable { showQueue = true }.padding(vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("Playing next", color = Color(0xFFB1B8B4), fontSize = 11.sp)
-            Text(song.artist, Modifier.padding(start = 18.dp), color = Ink, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+
+        if (canOpenArtist) {
+            ArtistProfileCard(
+                song = song,
+                loading = openingArtist,
+                onClick = ::openArtistProfile,
+                modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+            )
         }
+        PlayingNextStack(
+            player = player,
+            modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+            onOpenQueue = { showQueue = true },
+        )
         player.lastError?.let { error ->
             Text(error, Modifier.padding(top = 8.dp), color = Color(0xFFFF8A80), fontSize = 12.sp, maxLines = 3)
         }
@@ -301,6 +386,220 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     }
     if (showQueue) QueueSheet(player) { showQueue = false }
     if (showSleep) SleepTimerSheet(player) { showSleep = false }
+    if (confirmRemoveDownload) {
+        DeleteDownloadConfirmDialog(
+            songTitle = song.title,
+            onConfirm = {
+                OfflineDownloads.delete(song.id)
+                confirmRemoveDownload = false
+            },
+            onDismiss = { confirmRemoveDownload = false },
+        )
+    }
+}
+
+@Composable
+private fun ArtistProfileCard(
+    song: PlayableSong,
+    loading: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(0xFFF3F5F3))
+            .clickable(enabled = !loading, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        AsyncImage(
+            model = song.thumbnailUrl,
+            contentDescription = song.artist,
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFE1E5E2)),
+            contentScale = ContentScale.Crop,
+        )
+        Column(Modifier.weight(1f)) {
+            Text(
+                song.artist,
+                color = Ink,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                if (loading) "Opening artist…" else "Listen more from this artist",
+                color = Color(0xFF8B9490),
+                fontSize = 12.sp,
+                maxLines = 1,
+            )
+        }
+        if (loading) {
+            CircularProgressIndicator(
+                color = Cyan,
+                strokeWidth = 2.dp,
+                modifier = Modifier.size(18.dp),
+            )
+        } else {
+            Icon(
+                Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = null,
+                tint = Color(0xFF9FA8A3),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayingNextStack(
+    player: PlayerConnection,
+    modifier: Modifier = Modifier,
+    onOpenQueue: () -> Unit,
+) {
+    val context = LocalContext.current
+    val prefs = remember {
+        context.applicationContext.getSharedPreferences("musium_appearance", android.content.Context.MODE_PRIVATE)
+    }
+    var visible by remember {
+        mutableStateOf(prefs.getBoolean("playing_next_visible", true))
+    }
+    val next = player.queue.getOrNull(player.currentIndex + 1)
+    val after = player.queue.getOrNull(player.currentIndex + 2) ?: next
+    Column(modifier) {
+        Row(
+            Modifier.fillMaxWidth().padding(bottom = if (visible) 10.dp else 0.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "Playing next",
+                Modifier.weight(1f),
+                color = Color(0xFF9AA49F),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+            IconButton(
+                onClick = {
+                    visible = !visible
+                    prefs.edit().putBoolean("playing_next_visible", visible).apply()
+                },
+                modifier = Modifier.size(34.dp),
+            ) {
+                Icon(
+                    if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                    if (visible) "Hide playing next" else "Show playing next",
+                    tint = Color(0xFF8B9490),
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            IconButton(
+                onClick = onOpenQueue,
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .size(34.dp),
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Outlined.QueueMusic,
+                    "Queue",
+                    tint = Ink,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+        if (visible) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(78.dp)
+                    .clickable(onClick = onOpenQueue),
+            ) {
+                if (after != null) {
+                    NextTrackCard(
+                        song = after,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp)
+                            .offset(y = 10.dp)
+                            .alpha(0.42f),
+                        muted = true,
+                    )
+                }
+                NextTrackCard(
+                    song = next,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth(),
+                    muted = false,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NextTrackCard(
+    song: PlayableSong?,
+    modifier: Modifier = Modifier,
+    muted: Boolean,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    Row(
+        modifier
+            .height(64.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (muted) Color(0xFFE8EBE8) else Color.White)
+            .border(1.dp, Color(0xFFE1E5E2), RoundedCornerShape(14.dp))
+            .padding(horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (song == null) {
+            Box(
+                Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFF0F1EF)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.AutoMirrored.Outlined.QueueMusic, null, tint = Color(0xFFB0B8B4), modifier = Modifier.size(22.dp))
+            }
+            Text(
+                "Queue is empty",
+                Modifier.padding(start = 12.dp).weight(1f),
+                color = Color(0xFF9AA49F),
+                fontSize = 13.sp,
+            )
+        } else {
+            AsyncImage(
+                song.thumbnailUrl,
+                song.title,
+                Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFF0F1EF)),
+                contentScale = ContentScale.Crop,
+            )
+            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                Text(
+                    song.title,
+                    color = Ink,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    song.artist,
+                    color = Color(0xFF9AA49F),
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            trailing?.invoke()
+        }
+    }
 }
 
 internal fun formatTime(milliseconds: Long): String {

@@ -245,6 +245,17 @@ class MusicService : MediaSessionService() {
         postPlaybackNotification()
     }
 
+    fun appendToQueue(songs: List<PlayableSong>) {
+        if (songs.isEmpty()) return
+        val existing = (0 until player.mediaItemCount).mapNotNull { i ->
+            PlayableSong.from(player.getMediaItemAt(i))?.id
+        }.toHashSet()
+        val fresh = songs.filter { it.id !in existing }
+        if (fresh.isEmpty()) return
+        player.addMediaItems(fresh.map { it.toMediaItem() })
+        postPlaybackNotification()
+    }
+
     fun currentIndex(): Int = player.currentMediaItemIndex.coerceAtLeast(0)
 
     fun playAt(index: Int) {
@@ -252,6 +263,24 @@ class MusicService : MediaSessionService() {
         player.seekTo(index, 0L)
         player.prepare()
         player.play()
+        postPlaybackNotification()
+    }
+
+    fun addToQueue(song: PlayableSong) {
+        val item = OfflineDownloads.attachAll(listOf(song)).first().toMediaItem()
+        if (player.mediaItemCount == 0) {
+            playQueue(listOf(PlayableSong.from(item) ?: song), 0)
+            return
+        }
+        player.addMediaItem(item)
+        postPlaybackNotification()
+    }
+
+    fun moveInQueue(from: Int, to: Int) {
+        if (from == to) return
+        if (from !in 0 until player.mediaItemCount) return
+        if (to !in 0 until player.mediaItemCount) return
+        player.moveMediaItem(from, to)
         postPlaybackNotification()
     }
 

@@ -1,12 +1,14 @@
 package com.musium.app
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -62,15 +64,18 @@ internal fun BrandLockup(
     )
     val density = LocalDensity.current
     val markH = with(density) { (textSize.toPx() * 0.75f).toDp() }
-    Row(modifier) {
+    Row(
+        modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
         BrandMark(
             Modifier
                 .height(markH)
-                .width(markH * 1.14f)
-                .alignBy { it.measuredHeight },
+                .width(markH * 1.14f),
             markColor,
         )
         Spacer(Modifier.width(9.dp))
-        Text("usiPedia", Modifier.alignByBaseline(), style = style)
+        Text("usiPedia", style = style)
     }
 }

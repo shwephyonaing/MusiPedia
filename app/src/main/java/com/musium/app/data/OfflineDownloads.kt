@@ -1,5 +1,9 @@
 package com.musium.app
 
+import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -31,6 +35,8 @@ object OfflineDownloads {
 
     private lateinit var store: DownloadStore
     private lateinit var scope: CoroutineScope
+    private lateinit var appContext: Context
+    private val mainHandler = Handler(Looper.getMainLooper())
     private val jobs = mutableMapOf<String, Job>()
     private val http = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
@@ -38,9 +44,10 @@ object OfflineDownloads {
         .callTimeout(0, TimeUnit.SECONDS)
         .build()
 
-    fun initialize(store: DownloadStore, scope: CoroutineScope) {
+    fun initialize(store: DownloadStore, scope: CoroutineScope, context: Context) {
         this.store = store
         this.scope = scope
+        this.appContext = context.applicationContext
         refresh()
     }
 
@@ -61,6 +68,7 @@ object OfflineDownloads {
         inFlight = inFlight + (song.id to song)
         progressing = progressing + song.id
         progress = progress + (song.id to 0f)
+        toast("Downloading...")
         jobs[song.id] = scope.launch(Dispatchers.IO) {
             try {
                 writeFile(song)
@@ -69,6 +77,7 @@ object OfflineDownloads {
                     refresh()
                     progressing = progressing - song.id
                     progress = progress - song.id
+                    toast("Downloaded")
                 }
             } catch (_: CancellationException) {
                 store.remove(song.id)
@@ -84,6 +93,7 @@ object OfflineDownloads {
                     lastError = error.message ?: "Download failed"
                     progressing = progressing - song.id
                     progress = progress - song.id
+                    toast(lastError ?: "Download failed")
                 }
             }
         }
@@ -96,6 +106,13 @@ object OfflineDownloads {
         progressing = progressing - id
         progress = progress - id
         refresh()
+    }
+
+    private fun toast(message: String) {
+        if (!::appContext.isInitialized) return
+        mainHandler.post {
+            Toast.makeText(appContext, message, Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun refresh() {

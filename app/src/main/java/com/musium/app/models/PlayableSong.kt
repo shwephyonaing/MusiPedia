@@ -5,6 +5,8 @@ import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import com.musium.innertube.SongItem
+import com.musium.innertube.hdArtwork
+import com.musium.innertube.youtubeThumb
 import java.io.File
 
 data class PlayableSong(
@@ -83,7 +85,8 @@ fun SongItem.toPlayable(): PlayableSong = PlayableSong(
     id = id,
     title = title,
     artist = subtitle ?: "YouTube Music",
-    thumbnailUrl = thumbnail,
+    thumbnailUrl = thumbnail?.hdArtwork()
+        ?: id.takeIf { it.length == 11 }?.let { youtubeThumb(it) },
     playlistId = playlistId,
     artistId = artistId,
     albumId = albumId,

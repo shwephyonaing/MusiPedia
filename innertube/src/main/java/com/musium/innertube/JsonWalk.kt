@@ -61,10 +61,35 @@ internal fun JSONObject.bestThumbnail(): String? {
         obj.arr("thumbnails")?.objects()?.forEach { consider(it.str("url"), it.optInt("width")) }
         if (obj.has("url") && obj.has("width")) consider(obj.str("url"), obj.optInt("width"))
     }
-    return bestUrl
+    return bestUrl?.hdArtwork()
 }
 
 private fun String.normalizeThumb(): String = if (startsWith("//")) "https:$this" else this
+
+/** Prefer large stills for full-bleed heroes / posters (Apple + YouTube). */
+fun String.hdArtwork(): String {
+    if (isBlank()) return this
+    var url = normalizeThumb()
+    url = url.replace(Regex("""/(\d+)x(\d+)([a-z]*)\.(jpg|jpeg|png|webp)""", RegexOption.IGNORE_CASE)) { match ->
+        val w = match.groupValues[1].toIntOrNull() ?: 0
+        val h = match.groupValues[2].toIntOrNull() ?: 0
+        val suffix = match.groupValues[3]
+        val ext = match.groupValues[4]
+        if (w < 1200 || h < 1200) "/1200x1200$suffix.$ext" else match.value
+    }
+    url = url.replace(
+        Regex("""/(default|mqdefault|hqdefault|sddefault|hq720)\.(jpg|webp)""", RegexOption.IGNORE_CASE),
+        "/maxresdefault.$2",
+    )
+    url = url.replace(Regex("""=w\d+-h\d+[^&?]*"""), "=w1280-h1280-l90-rj")
+    url = url.replace(Regex("""([?&]sz=)[^&]+"""), "$11280")
+    url = url.replace(Regex("""=s\d+([^\d]|$)"""), "=s1280$1")
+    return url
+}
+
+fun youtubeThumb(videoId: String, hd: Boolean = true): String =
+    if (hd) "https://i.ytimg.com/vi/$videoId/maxresdefault.jpg"
+    else "https://i.ytimg.com/vi/$videoId/hqdefault.jpg"
 
 internal fun JSONObject.firstVideoId(): String? {
     str("videoId")?.let { return it }

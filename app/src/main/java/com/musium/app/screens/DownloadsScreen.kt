@@ -27,6 +27,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +50,7 @@ private val DownloadInk = Color(0xFF414944)
 internal fun DownloadsScreen(darkMode: Boolean = false, onBack: () -> Unit) {
     val player = LocalPlayerConnection.current
     val downloads = (OfflineDownloads.songs + OfflineDownloads.inFlight.values).distinctBy { it.id }
+    var pendingDelete by remember { mutableStateOf<PlayableSong?>(null) }
     val surface = if (darkMode) Color(0xFF121413) else Color.White
     val textColor = if (darkMode) Color(0xFFF2F4F3) else DownloadInk
     val mutedColor = if (darkMode) Color(0xFF8E9993) else Color(0xFF909994)
@@ -122,7 +127,7 @@ internal fun DownloadsScreen(darkMode: Boolean = false, onBack: () -> Unit) {
                                 modifier = Modifier.size(22.dp),
                             )
                         }
-                        IconButton(onClick = { OfflineDownloads.delete(song.id) }) {
+                        IconButton(onClick = { pendingDelete = song }) {
                             Icon(Icons.Outlined.Close, "Remove download", tint = mutedColor)
                         }
                     }
@@ -135,6 +140,16 @@ internal fun DownloadsScreen(darkMode: Boolean = false, onBack: () -> Unit) {
                 .size(38.dp).background(backColor, CircleShape),
         ) {
             Icon(Icons.Outlined.KeyboardArrowDown, "Back to Settings", tint = if (darkMode) Color.White else Color(0xFF727A76))
+        }
+        pendingDelete?.let { song ->
+            DeleteDownloadConfirmDialog(
+                songTitle = song.title,
+                onConfirm = {
+                    OfflineDownloads.delete(song.id)
+                    pendingDelete = null
+                },
+                onDismiss = { pendingDelete = null },
+            )
         }
     }
 }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,11 +25,18 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.DownloadDone
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.material.icons.automirrored.outlined.PlaylistAdd
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -55,10 +63,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.musium.innertube.SearchPage
+import com.musium.innertube.SongItem
 import com.musium.innertube.YtItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -233,8 +243,22 @@ internal fun ExploreScreen(onBack: () -> Unit = {}) {
                                 SearchTab.Playlists -> page.playlists
                             }
                             items(visible, key = { it::class.simpleName + it.id }) { item ->
-                                MusicItemRow(item, round = tab == SearchTab.Artists, light = true) {
-                                    item.open(player, router, page.songs.map { it.toPlayable() })
+                                MusicItemRow(
+                                    item = item,
+                                    round = tab == SearchTab.Artists,
+                                    light = true,
+                                    trailing = if (item is SongItem) {
+                                        {
+                                            SearchSongMenu(
+                                                song = item.toPlayable(),
+                                                player = player,
+                                            )
+                                        }
+                                    } else {
+                                        null
+                                    },
+                                ) {
+                                    item.open(player, router)
                                 }
                             }
                         }
@@ -274,7 +298,13 @@ private fun SuggestRow(text: String, history: Boolean, onClick: () -> Unit, onRe
 }
 
 @Composable
-internal fun MusicItemRow(item: YtItem, round: Boolean = false, light: Boolean = false, onClick: () -> Unit) {
+internal fun MusicItemRow(
+    item: YtItem,
+    round: Boolean = false,
+    light: Boolean = false,
+    trailing: (@Composable RowScope.() -> Unit)? = null,
+    onClick: () -> Unit,
+) {
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 28.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -289,7 +319,93 @@ internal fun MusicItemRow(item: YtItem, round: Boolean = false, light: Boolean =
         Column(Modifier.weight(1f)) {
             Text(item.title, color = if (light) SearchInk else Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 2)
             Spacer(Modifier.height(4.dp))
-            Text(item.subtitle ?: item::class.simpleName.orEmpty().removeSuffix("Item"), color = if (light) Color(0xFF909994) else Color(0xFFB6B6B6), fontSize = 13.sp, maxLines = 1)
+            Text(
+                item.subtitle ?: item::class.simpleName.orEmpty().removeSuffix("Item"),
+                color = if (light) Color(0xFF909994) else Color(0xFFB6B6B6),
+                fontSize = 13.sp,
+                maxLines = 1,
+            )
+        }
+        trailing?.invoke(this)
+    }
+}
+
+@Composable
+private fun SearchSongMenu(song: PlayableSong, player: PlayerConnection?) {
+    var open by remember { mutableStateOf(false) }
+    var confirmRemove by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }) {
+            Icon(Icons.Outlined.MoreHoriz, "More", tint = Color(0xFF909994))
+        }
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+            modifier = Modifier.width(200.dp),
+            offset = DpOffset(x = (-120).dp, y = 0.dp),
+            containerColor = Color.White,
+            shape = RoundedCornerShape(10.dp),
+            tonalElevation = 0.dp,
+            shadowElevation = 7.dp,
+        ) {
+            if (song.canDownload) {
+                DropdownMenuItem(
+                    modifier = Modifier.height(44.dp),
+                    text = {
+                        Text(
+                            if (OfflineDownloads.has(song.id)) "Remove download" else "Download",
+                            color = SearchInk,
+                            fontSize = 13.sp,
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            if (OfflineDownloads.has(song.id)) Icons.Outlined.DownloadDone else Icons.Outlined.Download,
+                            null,
+                            tint = Color(0xFF8B9490),
+                            modifier = Modifier.size(20.dp),
+                        )
+                    },
+                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    onClick = {
+                        if (OfflineDownloads.has(song.id)) {
+                            confirmRemove = true
+                            open = false
+                        } else {
+                            OfflineDownloads.download(song)
+                            open = false
+                        }
+                    },
+                )
+                HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
+            }
+            DropdownMenuItem(
+                modifier = Modifier.height(44.dp),
+                text = { Text("Add to queue", color = SearchInk, fontSize = 13.sp) },
+                leadingIcon = {
+                    Icon(
+                        Icons.AutoMirrored.Outlined.PlaylistAdd,
+                        null,
+                        tint = Color(0xFF8B9490),
+                        modifier = Modifier.size(20.dp),
+                    )
+                },
+                contentPadding = PaddingValues(horizontal = 12.dp),
+                onClick = {
+                    player?.addToQueue(song)
+                    open = false
+                },
+            )
+        }
+        if (confirmRemove) {
+            DeleteDownloadConfirmDialog(
+                songTitle = song.title,
+                onConfirm = {
+                    OfflineDownloads.delete(song.id)
+                    confirmRemove = false
+                },
+                onDismiss = { confirmRemove = false },
+            )
         }
     }
 }
