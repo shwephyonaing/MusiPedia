@@ -1,0 +1,24 @@
+# Android Studio and local configuration
+.idea/
+*.iml
+local.properties
+
+# Gradle and Kotlin caches
+.gradle/
+.kotlin/
+**/build/
+
+# Native build output
+.cxx/
+.externalNativeBuild/
+
+# Signing credentials
+*.jks
+*.keystore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local reference project (separate Git repository)
+Sample/
