@@ -140,7 +140,7 @@ internal fun ExploreScreen() {
             contentPadding = PaddingValues(top = 54.dp, bottom = 170.dp),
         ) {
             item {
-                Row(Modifier.padding(horizontal = 28.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.padding(start = 76.dp, end = 28.dp), verticalAlignment = Alignment.CenterVertically) {
                     BrandMark(Modifier.height(28.dp).width(32.dp), Cyan)
                     Text("Search", Modifier.padding(start = 12.dp), color = Cyan, fontSize = 26.sp, fontWeight = FontWeight.Bold)
                 }

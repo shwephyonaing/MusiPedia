@@ -5,7 +5,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -45,12 +50,13 @@ fun MusiumHomeScreen() {
                 destination = stack.lastOrNull()
                 stack = stack.dropLast(1)
             }
+            selectedTab != 0 -> selectedTab = 0
             else -> return false
         }
         return true
     }
 
-    BackHandler(enabled = fullPlayer || destination != null) { goBack() }
+    BackHandler(enabled = fullPlayer || destination != null || selectedTab != 0) { goBack() }
 
     CompositionLocalProvider(LocalMusicRouter provides router) {
         Box(Modifier.fillMaxSize().background(PageBlack)) {
@@ -59,6 +65,7 @@ fun MusiumHomeScreen() {
                 ExploreScreen()
             }
             if (selectedTab == 2 && showTabs) LibraryScreen()
+            if (selectedTab == 3 && showTabs) SettingsScreen()
             if (!fullPlayer) {
                 when (val route = destination) {
                     is MusicRoute.Artist -> ArtistScreen(route.id, route.name, onBack = { goBack() })
@@ -68,7 +75,7 @@ fun MusiumHomeScreen() {
                 }
             }
             if (fullPlayer) FullPlayerScreen(onBack = { fullPlayer = false })
-            if (!fullPlayer) {
+            if (!fullPlayer && selectedTab == 0 && destination == null) {
                 Column(Modifier.align(Alignment.BottomCenter)) {
                     MiniPlayer(onOpen = { fullPlayer = true })
                     BottomNavigation(selectedTab, onSelected = { tab ->
@@ -78,6 +85,14 @@ fun MusiumHomeScreen() {
                         }
                         selectedTab = tab
                     })
+                }
+            }
+            if (!fullPlayer && selectedTab != 0 && destination == null) {
+                IconButton(
+                    onClick = { selectedTab = 0 },
+                    modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 34.dp),
+                ) {
+                    Icon(Icons.Outlined.KeyboardArrowDown, "Back to Home", tint = Color(0xFF727A76))
                 }
             }
         }

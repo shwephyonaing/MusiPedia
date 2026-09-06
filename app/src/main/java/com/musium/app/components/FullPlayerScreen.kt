@@ -48,8 +48,9 @@ import androidx.compose.ui.unit.sp
 import com.musium.innertube.Lyrics
 import kotlinx.coroutines.delay
 
-private val Cyan = Color(0xFF18CDE0)
-private val Black = Color(0xFF101010)
+private val Cyan = Color(0xFF42E4CE)
+private val Black = Color(0xFFFAFAF8)
+private val Ink = Color(0xFF3F4944)
 
 @Composable
 internal fun FullPlayerScreen(onBack: () -> Unit) {
@@ -57,8 +58,8 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     val song = player?.current
     if (player == null || song == null) {
         Column(Modifier.fillMaxSize().background(Black).padding(28.dp)) {
-            IconButton(onClick = onBack) { Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = Color.White) }
-            Text("Nothing is playing", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            IconButton(onClick = onBack) { Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = Ink) }
+            Text("Nothing is playing", color = Ink, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         }
         return
     }
@@ -82,7 +83,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     Column(Modifier.fillMaxSize().background(Black).padding(horizontal = 28.dp, vertical = 28.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = Color.White, modifier = Modifier.size(32.dp))
+                Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = Ink, modifier = Modifier.size(32.dp))
             }
             if (player.sleepActive) {
                 Text(
@@ -126,8 +127,8 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                 )
             }
         }
-        Text(song.title, Modifier.padding(top = 28.dp), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold, maxLines = 2)
-        Text(song.artist, Modifier.padding(top = 6.dp), color = Color(0xFF9FAEB1), fontSize = 16.sp, maxLines = 1)
+        Text(song.title, Modifier.padding(top = 22.dp), color = Ink, fontSize = 28.sp, fontWeight = FontWeight.Bold, maxLines = 2)
+        Text(song.artist, Modifier.padding(top = 6.dp), color = Color(0xFF8C9690), fontSize = 14.sp, maxLines = 1)
         player.lastError?.let { error ->
             Text(error, Modifier.padding(top = 8.dp), color = Color(0xFFFF8A80), fontSize = 12.sp, maxLines = 3)
         }
@@ -149,8 +150,8 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
             modifier = Modifier.padding(top = 24.dp),
         )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(formatTime(position), color = Color.LightGray, fontSize = 12.sp)
-            Text(formatTime(duration), color = Color.LightGray, fontSize = 12.sp)
+            Text(formatTime(position), color = Color(0xFF8C9690), fontSize = 12.sp)
+            Text(formatTime(duration), color = Color(0xFF8C9690), fontSize = 12.sp)
         }
         Row(
             Modifier.fillMaxWidth().padding(top = 16.dp),
@@ -158,7 +159,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = player::previous) {
-                Icon(Icons.Outlined.SkipPrevious, "Previous", tint = Color.White, modifier = Modifier.size(36.dp))
+                Icon(Icons.Outlined.SkipPrevious, "Previous", tint = Cyan, modifier = Modifier.size(36.dp))
             }
             FloatingActionButton(onClick = player::togglePlay, containerColor = Cyan) {
                 Icon(
@@ -169,7 +170,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                 )
             }
             IconButton(onClick = player::next) {
-                Icon(Icons.Outlined.SkipNext, "Next", tint = Color.White, modifier = Modifier.size(36.dp))
+                Icon(Icons.Outlined.SkipNext, "Next", tint = Cyan, modifier = Modifier.size(36.dp))
             }
         }
         Row(
@@ -179,14 +180,14 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
         ) {
             if (lyrics != null) {
                 IconButton(onClick = { lyricsOn = !lyricsOn }) {
-                    Icon(Icons.Outlined.Lyrics, "Lyrics", tint = if (lyricsOn) Cyan else Color.White)
+                    Icon(Icons.Outlined.Lyrics, "Lyrics", tint = if (lyricsOn) Cyan else Ink)
                 }
             }
             IconButton(onClick = { showQueue = true }) {
-                Icon(Icons.AutoMirrored.Outlined.QueueMusic, "Queue", tint = Color.White)
+                Icon(Icons.AutoMirrored.Outlined.QueueMusic, "Queue", tint = Ink)
             }
             IconButton(onClick = { showSleep = true }) {
-                Icon(Icons.Outlined.Bedtime, "Sleep timer", tint = if (player.sleepActive) Cyan else Color.White)
+                Icon(Icons.Outlined.Bedtime, "Sleep timer", tint = if (player.sleepActive) Cyan else Ink)
             }
             if (song.canDownload) {
                 val downloading = song.id in OfflineDownloads.progressing
@@ -200,7 +201,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                             modifier = Modifier.size(22.dp),
                         )
                         downloaded -> Icon(Icons.Outlined.DownloadDone, "Remove download", tint = Cyan)
-                        else -> Icon(Icons.Outlined.Download, "Download", tint = Color.White)
+                        else -> Icon(Icons.Outlined.Download, "Download", tint = Ink)
                     }
                 }
             }

@@ -2,7 +2,9 @@ package com.musium.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -33,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,9 +44,25 @@ import com.musium.innertube.HomeSection
 import com.musium.innertube.SongItem
 import com.musium.innertube.YtItem
 
-private val Cyan = Color(0xFF00C2CB)
-private val PageBlack = Color(0xFF0B0B0B)
-private val Tile = Color(0xFF172023)
+private val Cyan = Color(0xFF42E4CE)
+private val PageBlack = Color(0xFFFAFAF8)
+private val Tile = Color(0xFFF0F0EC)
+private val Ink = Color(0xFF3F4944)
+
+private data class DemoMood(val image: Int, val title: String, val duration: String)
+
+private val forYouMoods = listOf(
+    DemoMood(R.drawable.anything_goes, "Funky Vibes", "2 hours"),
+    DemoMood(R.drawable.pop_mix, "Emotional Eaters", "35 min"),
+    DemoMood(R.drawable.chill_mix, "Soft Sundays", "3 hours"),
+)
+
+private val popularMoods = listOf(
+    DemoMood(R.drawable.recent_harry, "Feeling Artsy", "42 min"),
+    DemoMood(R.drawable.library_vibes, "Late Night Vibes", "1 hour"),
+    DemoMood(R.drawable.released, "Fresh Sounds", "55 min"),
+    DemoMood(R.drawable.coffee_jazz, "Coffee & Jazz", "2 hours"),
+)
 
 private sealed interface HomeUi {
     data object Loading : HomeUi
@@ -67,33 +86,61 @@ internal fun HomeContent() {
     }
 
     Box(Modifier.fillMaxSize().background(PageBlack)) {
-        Box(
-            Modifier.fillMaxWidth().height(235.dp).background(
-                Brush.verticalGradient(listOf(Color(0xFF09383B), Color.Transparent)),
-            ),
-        )
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 46.dp, bottom = 170.dp),
+            contentPadding = PaddingValues(bottom = 106.dp),
         ) {
-            item { Header() }
+            item { FeaturedHero() }
+            item { SectionTitle("For you", Modifier.padding(top = 12.dp)) }
+            item { DemoMoodRow(forYouMoods) }
+            item { SectionTitle("Popular", Modifier.padding(top = 18.dp)) }
+            item { DemoMoodRow(popularMoods) }
             when (val current = state) {
-                HomeUi.Loading -> item { CircularProgressIndicator(Modifier.padding(28.dp), color = Cyan) }
+                HomeUi.Loading -> Unit
                 is HomeUi.Error -> item {
                     TextButton(onClick = { reload += 1 }, Modifier.padding(28.dp)) { Text("Retry", color = Cyan, fontWeight = FontWeight.Bold) }
                 }
                 is HomeUi.Ready -> {
-                    if (current.sections.isEmpty()) {
-                        item { Text("Nothing here", Modifier.padding(28.dp), Color.White, 16.sp) }
-                    }
-                    current.sections.forEach { section ->
-                        item { SectionTitle(section.title, Modifier.padding(top = 22.dp)) }
+                    current.sections.drop(2).forEach { section ->
+                        item { SectionTitle(section.title, Modifier.padding(top = 16.dp)) }
                         item { HomeSectionRow(section) { item -> item.open(player, router, section.items.filterIsInstance<SongItem>().map { it.toPlayable() }) } }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun DemoMoodRow(moods: List<DemoMood>) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 26.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        items(moods) { mood ->
+            Column(Modifier.width(158.dp)) {
+                Image(
+                    painter = painterResource(mood.image),
+                    contentDescription = mood.title,
+                    modifier = Modifier.size(158.dp).clip(RoundedCornerShape(10.dp)).background(Tile),
+                    contentScale = ContentScale.Crop,
+                )
+                Text(mood.title, Modifier.padding(top = 8.dp), color = Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                Text(mood.duration, Modifier.padding(top = 2.dp), color = Color(0xFFA3ACA7), fontSize = 12.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeaturedHero() {
+    Image(
+        painter = painterResource(R.drawable.featured_all_about_summer),
+        contentDescription = "Featured album: All About Summer",
+        modifier = Modifier.fillMaxWidth().aspectRatio(414f / 463f),
+        contentScale = ContentScale.FillWidth,
+        alignment = Alignment.TopCenter,
+    )
 }
 
 @Composable
@@ -132,7 +179,7 @@ private fun QuickSongCard(song: SongItem, modifier: Modifier = Modifier, onClick
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AsyncImage(song.thumbnail, song.title, Modifier.size(55.dp), contentScale = ContentScale.Crop)
-        Text(song.title, Modifier.padding(horizontal = 10.dp), Color.White, 10.sp, fontWeight = FontWeight.Bold, maxLines = 2)
+        Text(song.title, Modifier.padding(horizontal = 10.dp), Ink, 10.sp, fontWeight = FontWeight.Bold, maxLines = 2)
     }
 }
 
@@ -145,8 +192,8 @@ private fun HomeTile(item: YtItem, onClick: () -> Unit) {
             Modifier.size(150.dp).clip(RoundedCornerShape(4.dp)).background(Tile),
             contentScale = ContentScale.Crop,
         )
-        Text(item.title, Modifier.padding(top = 8.dp), Color.White, 13.sp, fontWeight = FontWeight.Bold, maxLines = 2)
-        item.subtitle?.let { Text(it, color = Color(0xFF8A9A9D), fontSize = 11.sp, maxLines = 1) }
+        Text(item.title, Modifier.padding(top = 8.dp), Ink, 13.sp, fontWeight = FontWeight.Bold, maxLines = 2)
+        item.subtitle?.let { Text(it, color = Color(0xFF8C9690), fontSize = 11.sp, maxLines = 1) }
     }
 }
 
@@ -157,5 +204,5 @@ internal fun Header() {
 
 @Composable
 internal fun SectionTitle(text: String, modifier: Modifier = Modifier) {
-    Text(text, modifier.padding(horizontal = 26.dp, vertical = 8.dp), Color.White, 20.sp, fontWeight = FontWeight.Bold)
+    Text(text, modifier.padding(horizontal = 26.dp, vertical = 8.dp), Ink, 23.sp, fontWeight = FontWeight.Bold)
 }
