@@ -79,7 +79,7 @@ internal fun LibraryScreen(active: Boolean = true, onBack: () -> Unit = {}, onEx
                 }
             }
         } else {
-            LazyColumn(contentPadding = PaddingValues(top = 86.dp, bottom = 36.dp)) {
+            LazyColumn(contentPadding = PaddingValues(top = 86.dp, bottom = 118.dp)) {
                 item {
                     Text("Favorites", Modifier.padding(horizontal = 28.dp, vertical = 14.dp), color = FavoriteInk, fontSize = 27.sp, fontWeight = FontWeight.Bold)
                 }

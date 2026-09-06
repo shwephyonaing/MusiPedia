@@ -2,21 +2,26 @@ package com.musium.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,91 +32,109 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 
-private val Cyan = Color(0xFF42E4CE)
-private val Page = Color(0xFFFAFAF8)
-private val Tile = Color(0xFFF0F0EC)
-private val Ink = Color(0xFF3F4944)
+private val DownloadAqua = Color(0xFF42E4CE)
+private val DownloadInk = Color(0xFF414944)
 
 @Composable
-internal fun DownloadsScreen(onBack: () -> Unit, onOpenPlayer: () -> Unit) {
+internal fun DownloadsScreen(darkMode: Boolean = false, onBack: () -> Unit) {
     val player = LocalPlayerConnection.current
-    val downloads = (OfflineDownloads.inFlight.values + OfflineDownloads.songs).distinctBy { it.id }
-    Box(Modifier.fillMaxSize().background(Page)) {
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 96.dp),
-        ) {
-            item {
-                Row(
-                    Modifier.statusBarsPadding().padding(start = 8.dp, end = 26.dp, top = 8.dp, bottom = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = Ink)
-                    }
-                    Text("Downloads", color = Ink, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-                }
+    val downloads = (OfflineDownloads.songs + OfflineDownloads.inFlight.values).distinctBy { it.id }
+    val surface = if (darkMode) Color(0xFF121413) else Color.White
+    val textColor = if (darkMode) Color(0xFFF2F4F3) else DownloadInk
+    val mutedColor = if (darkMode) Color(0xFF8E9993) else Color(0xFF909994)
+    val tileColor = if (darkMode) Color(0xFF292D2B) else Color(0xFFF0F1EF)
+    val backColor = if (darkMode) Color(0xFF303532) else Color(0xFFE1E5E2)
+
+    Box(Modifier.fillMaxSize().background(surface).safeDrawingPadding()) {
+        if (downloads.isEmpty()) {
+            Column(
+                Modifier.align(Alignment.Center).padding(horizontal = 36.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(Icons.Outlined.Download, null, tint = DownloadAqua, modifier = Modifier.size(88.dp))
+                Spacer(Modifier.height(28.dp))
+                Text("No Downloads", color = textColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "Downloaded songs will appear here",
+                    Modifier.padding(top = 9.dp),
+                    color = mutedColor,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center,
+                )
             }
-            OfflineDownloads.lastError?.let { error ->
-                item {
-                    Text(error, Modifier.padding(26.dp, 8.dp), color = Color(0xFFB42318), fontSize = 13.sp)
-                }
-            }
-            if (downloads.isEmpty()) {
+        } else {
+            LazyColumn(contentPadding = PaddingValues(top = 82.dp, bottom = 118.dp)) {
                 item {
                     Text(
-                        "Nothing downloaded yet",
-                        Modifier.padding(26.dp, 16.dp),
-                        color = Ink,
-                        fontSize = 16.sp,
+                        "Downloads",
+                        Modifier.padding(horizontal = 28.dp, vertical = 16.dp),
+                        color = textColor,
+                        fontSize = 27.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Serif,
                     )
                 }
-            } else {
+                OfflineDownloads.lastError?.let { error ->
+                    item {
+                        Text(error, Modifier.padding(horizontal = 28.dp, vertical = 8.dp), color = Color(0xFFFF6464), fontSize = 12.sp)
+                    }
+                }
                 items(downloads, key = { it.id }) { song ->
-                    DownloadRow(song) {
-                        val queue = OfflineDownloads.songs
-                        player?.play(queue, queue.indexOfFirst { it.id == song.id }.coerceAtLeast(0))
-                        onOpenPlayer()
+                    val downloading = song.id in OfflineDownloads.progressing
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .clickable(enabled = !downloading) {
+                                val queue = OfflineDownloads.songs
+                                val index = queue.indexOfFirst { it.id == song.id }
+                                if (index >= 0) player?.play(queue, index)
+                            }
+                            .padding(horizontal = 24.dp, vertical = 9.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        AsyncImage(
+                            model = song.thumbnailUrl,
+                            contentDescription = song.title,
+                            modifier = Modifier.size(58.dp).clip(RoundedCornerShape(8.dp)).background(tileColor),
+                            contentScale = ContentScale.Crop,
+                        )
+                        Column(Modifier.weight(1f)) {
+                            Text(song.title, color = textColor, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                            Text(
+                                if (downloading) "Downloading…" else song.artist,
+                                color = mutedColor,
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                            )
+                        }
+                        if (downloading) {
+                            CircularProgressIndicator(
+                                progress = { OfflineDownloads.progress[song.id] ?: 0f },
+                                color = DownloadAqua,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                        IconButton(onClick = { OfflineDownloads.delete(song.id) }) {
+                            Icon(Icons.Outlined.Close, "Remove download", tint = mutedColor)
+                        }
                     }
                 }
             }
         }
-        MiniPlayer(onOpen = onOpenPlayer, modifier = Modifier.align(Alignment.BottomCenter), protectBottom = true)
-    }
-}
-
-@Composable
-private fun DownloadRow(song: PlayableSong, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 26.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        AsyncImage(
-            song.thumbnailUrl,
-            song.title,
-            Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)).background(Tile),
-            contentScale = ContentScale.Crop,
-        )
-        Column(Modifier.padding(start = 14.dp).weight(1f)) {
-            Text(song.title, color = Ink, fontWeight = FontWeight.Bold, maxLines = 1)
-            Text(song.artist, color = Color(0xFF8C9690), fontSize = 13.sp, maxLines = 1)
-        }
-        if (song.id in OfflineDownloads.progressing) {
-            CircularProgressIndicator(
-                progress = { OfflineDownloads.progress[song.id] ?: 0f },
-                color = Cyan,
-                strokeWidth = 2.dp,
-                modifier = Modifier.size(22.dp),
-            )
-        } else {
-            IconButton(onClick = { OfflineDownloads.delete(song.id) }) {
-                Icon(Icons.Outlined.Close, "Remove download", tint = Color(0xFF8C9690))
-            }
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier.align(Alignment.TopStart).padding(start = 28.dp, top = 24.dp)
+                .size(38.dp).background(backColor, CircleShape),
+        ) {
+            Icon(Icons.Outlined.KeyboardArrowDown, "Back to Settings", tint = if (darkMode) Color.White else Color(0xFF727A76))
         }
     }
 }

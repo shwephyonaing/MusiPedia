@@ -23,16 +23,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 private val PageBlack = Color(0xFF0B0B0B)
 
 @Composable
 fun MusiumHomeScreen() {
+    val context = LocalContext.current
+    val appearancePreferences = remember {
+        context.applicationContext.getSharedPreferences("musium_appearance", android.content.Context.MODE_PRIVATE)
+    }
     var selectedTab by remember { mutableIntStateOf(0) }
     var destination by remember { mutableStateOf<MusicRoute?>(null) }
     var stack by remember { mutableStateOf<List<MusicRoute>>(emptyList()) }
     var fullPlayer by remember { mutableStateOf(false) }
+    var showDownloads by remember { mutableStateOf(false) }
+    var darkMode by remember { mutableStateOf(appearancePreferences.getBoolean("dark_mode", false)) }
     val showTabs = destination == null
 
     val router: (MusicRoute) -> Unit = { route ->
@@ -48,6 +55,7 @@ fun MusiumHomeScreen() {
     fun goBack(): Boolean {
         when {
             fullPlayer -> fullPlayer = false
+            showDownloads -> showDownloads = false
             destination != null -> {
                 destination = stack.lastOrNull()
                 stack = stack.dropLast(1)
@@ -58,7 +66,7 @@ fun MusiumHomeScreen() {
         return true
     }
 
-    BackHandler(enabled = fullPlayer || destination != null || selectedTab != 0) { goBack() }
+    BackHandler(enabled = fullPlayer || showDownloads || destination != null || selectedTab != 0) { goBack() }
 
     CompositionLocalProvider(LocalMusicRouter provides router) {
         Box(Modifier.fillMaxSize().background(PageBlack)) {
@@ -74,22 +82,59 @@ fun MusiumHomeScreen() {
                 }
             }
             KeepAlive(visible = selectedTab == 2 && showTabs, animateFromBottom = true) {
-                LibraryScreen(
-                    active = selectedTab == 2 && showTabs,
-                    onBack = { selectedTab = 0 },
-                    onExplore = { selectedTab = 0 },
-                )
+                Box(Modifier.fillMaxSize()) {
+                    LibraryScreen(
+                        active = selectedTab == 2 && showTabs,
+                        onBack = { selectedTab = 0 },
+                        onExplore = { selectedTab = 0 },
+                    )
+                    MiniPlayer(
+                        onOpen = { fullPlayer = true },
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        protectBottom = true,
+                    )
+                }
             }
             KeepAlive(visible = selectedTab == 3 && showTabs, animateFromBottom = true) {
-                SettingsScreen(onBack = { selectedTab = 0 })
+                SettingsScreen(
+                    darkMode = darkMode,
+                    onDarkModeChange = { enabled ->
+                        darkMode = enabled
+                        appearancePreferences.edit().putBoolean("dark_mode", enabled).apply()
+                    },
+                    onBack = { selectedTab = 0 },
+                    onDownloads = { showDownloads = true },
+                )
             }
-            if (!fullPlayer) {
-                when (val route = destination) {
-                    is MusicRoute.Artist -> ArtistScreen(route.id, route.name, onBack = { goBack() })
-                    is MusicRoute.Album -> AlbumScreen(route.id, route.name, onBack = { goBack() })
-                    is MusicRoute.Playlist -> PlaylistScreen(route.id, route.name, onBack = { goBack() })
-                    MusicRoute.Downloads -> DownloadsScreen(onBack = { goBack() }, onOpenPlayer = { fullPlayer = true })
-                    null -> Unit
+            KeepAlive(visible = showDownloads, animateFromBottom = true) {
+                Box(Modifier.fillMaxSize()) {
+                    DownloadsScreen(darkMode = darkMode, onBack = { showDownloads = false })
+                    MiniPlayer(
+                        onOpen = { fullPlayer = true },
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        protectBottom = true,
+                    )
+                }
+            }
+            if (!fullPlayer && destination != null) {
+                Box(Modifier.fillMaxSize()) {
+                    when (val route = destination) {
+                        is MusicRoute.Artist -> ArtistScreen(
+                            route.id,
+                            route.name,
+                            route.profileImage,
+                            onBack = { goBack() },
+                        )
+                        is MusicRoute.Album -> AlbumScreen(route.id, route.name, onBack = { goBack() })
+                        is MusicRoute.Playlist -> PlaylistScreen(route.id, route.name, onBack = { goBack() })
+                        MusicRoute.Downloads -> DownloadsScreen(darkMode = darkMode, onBack = { goBack() })
+                        null -> Unit
+                    }
+                    MiniPlayer(
+                        onOpen = { fullPlayer = true },
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        protectBottom = true,
+                    )
                 }
             }
             KeepAlive(visible = fullPlayer, animateFromBottom = true) {

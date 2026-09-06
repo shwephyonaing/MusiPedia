@@ -27,7 +27,6 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -192,7 +191,11 @@ internal fun ExploreScreen(onBack: () -> Unit = {}) {
             } else {
                 when (val current = state) {
                     SearchUi.Idle -> Unit
-                    SearchUi.Loading -> item { CircularProgressIndicator(Modifier.padding(28.dp), color = Cyan) }
+                    SearchUi.Loading -> item {
+                        BrandLoadingIndicator(
+                            Modifier.fillMaxWidth().height(170.dp),
+                        )
+                    }
                     is SearchUi.Error -> item {
                         TextButton(onClick = { search() }, enabled = query.isNotBlank(), modifier = Modifier.padding(28.dp)) {
                             Text("Retry", color = Cyan, fontWeight = FontWeight.Bold)

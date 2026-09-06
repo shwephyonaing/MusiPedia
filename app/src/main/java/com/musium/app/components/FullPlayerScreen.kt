@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,6 +36,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
@@ -56,6 +58,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.musium.innertube.Lyrics
@@ -155,36 +158,89 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                 DropdownMenu(
                     expanded = showActions,
                     onDismissRequest = { showActions = false },
+                    modifier = Modifier.width(214.dp),
+                    offset = DpOffset(x = (-174).dp, y = (-4).dp),
                     containerColor = Color.White,
                     shape = RoundedCornerShape(10.dp),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 7.dp,
                 ) {
                     if (song.canDownload) {
                         DropdownMenuItem(
-                            text = { Text(if (OfflineDownloads.has(song.id)) "Remove download" else "Download", color = Ink) },
-                            leadingIcon = {
-                                Icon(if (OfflineDownloads.has(song.id)) Icons.Outlined.DownloadDone else Icons.Outlined.Download, null, tint = Cyan)
+                            modifier = Modifier.height(44.dp),
+                            text = {
+                                Text(
+                                    if (OfflineDownloads.has(song.id)) "Remove download" else "Download",
+                                    color = Ink,
+                                    fontSize = 12.sp,
+                                )
                             },
+                            leadingIcon = {
+                                Icon(
+                                    if (OfflineDownloads.has(song.id)) Icons.Outlined.DownloadDone else Icons.Outlined.Download,
+                                    null,
+                                    tint = Color(0xFF8B9490),
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            },
+                            contentPadding = PaddingValues(horizontal = 13.dp),
                             onClick = { OfflineDownloads.toggle(song); showActions = false },
                         )
+                        HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
                     }
                     DropdownMenuItem(
-                        text = { Text(if (favorite) "Remove from Favorites" else "Add to Favorites", color = Ink) },
-                        leadingIcon = { Icon(if (favorite) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder, null, tint = Cyan) },
+                        modifier = Modifier.height(44.dp),
+                        text = {
+                            Text(
+                                if (favorite) "Remove from Favorites" else "Add to Favorites",
+                                color = Ink,
+                                fontSize = 12.sp,
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                if (favorite) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
+                                null,
+                                tint = Color(0xFF8B9490),
+                                modifier = Modifier.size(20.dp),
+                            )
+                        },
+                        contentPadding = PaddingValues(horizontal = 13.dp),
                         onClick = {
                             favorite = favoriteStore?.toggle(song) ?: !favorite
                             showActions = false
                         },
                     )
+                    HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
                     if (lyrics != null) {
                         DropdownMenuItem(
-                            text = { Text(if (lyricsOn) "Hide lyrics" else "Show lyrics", color = Ink) },
-                            leadingIcon = { Icon(Icons.Outlined.Lyrics, null, tint = Cyan) },
+                            modifier = Modifier.height(44.dp),
+                            text = { Text(if (lyricsOn) "Hide lyrics" else "Show lyrics", color = Ink, fontSize = 12.sp) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Lyrics,
+                                    null,
+                                    tint = Color(0xFF8B9490),
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            },
+                            contentPadding = PaddingValues(horizontal = 13.dp),
                             onClick = { lyricsOn = !lyricsOn; showActions = false },
                         )
+                        HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
                     }
                     DropdownMenuItem(
-                        text = { Text("Sleep timer", color = Ink) },
-                        leadingIcon = { Icon(Icons.Outlined.Timer, null, tint = Cyan) },
+                        modifier = Modifier.height(44.dp),
+                        text = { Text("Sleep timer", color = Ink, fontSize = 12.sp) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Outlined.Timer,
+                                null,
+                                tint = Color(0xFF8B9490),
+                                modifier = Modifier.size(20.dp),
+                            )
+                        },
+                        contentPadding = PaddingValues(horizontal = 13.dp),
                         onClick = { showActions = false; showSleep = true },
                     )
                 }
