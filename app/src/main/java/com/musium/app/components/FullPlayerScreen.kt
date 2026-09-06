@@ -1,6 +1,7 @@
 package com.musium.app
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.DownloadDone
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Lyrics
 import androidx.compose.material.icons.outlined.MoreHoriz
@@ -27,7 +30,10 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.automirrored.outlined.QueueMusic
 import androidx.compose.material.icons.outlined.SkipNext
 import androidx.compose.material.icons.outlined.SkipPrevious
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -75,6 +82,9 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     var lyricsOn by remember(song.id) { mutableStateOf(false) }
     var showQueue by remember { mutableStateOf(false) }
     var showSleep by remember { mutableStateOf(false) }
+    var showActions by remember { mutableStateOf(false) }
+    val favoriteStore = (LocalContext.current.applicationContext as? MusiumApplication)?.favoriteStore
+    var favorite by remember(song.id) { mutableStateOf(favoriteStore?.contains(song.id) == true) }
     LaunchedEffect(song.id, player.playing, lyricsOn) {
         while (true) {
             if (!dragging) position = player.currentPosition()
@@ -87,40 +97,42 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     }
     val duration = player.duration.coerceAtLeast(1L)
     Column(Modifier.fillMaxSize().background(Black).safeDrawingPadding().padding(horizontal = 24.dp, vertical = 24.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack, modifier = Modifier.background(Color(0xFFE1E5E2), CircleShape).size(38.dp)) {
-                Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = Ink, modifier = Modifier.size(32.dp))
+        Box(Modifier.fillMaxWidth().height(340.dp)) {
+            if (lyricsOn && lyrics != null) {
+                LyricsPanel(
+                    lyrics = lyrics!!,
+                    positionMs = position,
+                    durationMs = duration,
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                ) { time ->
+                    player.seekTo(time)
+                    position = time
+                }
+            } else {
+                AsyncImage(
+                    model = song.thumbnailUrl,
+                    contentDescription = song.title,
+                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(2.dp)).background(Color(0xFFF0F1EF)),
+                    contentScale = ContentScale.Crop,
+                )
+            }
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
+                    .background(Color.White.copy(alpha = .92f), CircleShape).size(38.dp),
+            ) {
+                Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = Ink, modifier = Modifier.size(28.dp))
             }
             if (player.sleepActive) {
                 Text(
                     if (player.sleepEndOfTrack) "Sleep" else formatTime(player.sleepRemaining),
+                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+                        .background(Color.White.copy(alpha = .88f), RoundedCornerShape(14.dp)).padding(horizontal = 10.dp, vertical = 5.dp),
                     color = Cyan,
-                    fontSize = 13.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                 )
-            } else {
-                Spacer(Modifier.width(48.dp))
             }
-            Spacer(Modifier.width(48.dp))
-        }
-        if (lyricsOn && lyrics != null) {
-            LyricsPanel(
-                lyrics = lyrics!!,
-                positionMs = position,
-                durationMs = duration,
-                modifier = Modifier.fillMaxWidth().height(286.dp).padding(top = 28.dp),
-            ) { time ->
-                player.seekTo(time)
-                position = time
-            }
-        } else {
-            AsyncImage(
-                model = song.thumbnailUrl,
-                contentDescription = song.title,
-                modifier = Modifier.fillMaxWidth().height(326.dp).padding(top = 14.dp)
-                    .clip(RoundedCornerShape(2.dp)).background(Color(0xFFF0F1EF)),
-                contentScale = ContentScale.Crop,
-            )
         }
         Row(Modifier.fillMaxWidth().padding(top = 18.dp), verticalAlignment = Alignment.Top) {
             Text(
@@ -133,12 +145,56 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                 fontFamily = FontFamily.Serif,
                 maxLines = 2,
             )
-            IconButton(onClick = { showQueue = true }) {
-                Icon(Icons.Outlined.MoreHoriz, "More", tint = Ink)
+            Box {
+                IconButton(onClick = {
+                    favorite = favoriteStore?.contains(song.id) == true
+                    showActions = true
+                }) {
+                    Icon(Icons.Outlined.MoreHoriz, "More", tint = Ink)
+                }
+                DropdownMenu(
+                    expanded = showActions,
+                    onDismissRequest = { showActions = false },
+                    containerColor = Color.White,
+                    shape = RoundedCornerShape(10.dp),
+                ) {
+                    if (song.canDownload) {
+                        DropdownMenuItem(
+                            text = { Text(if (OfflineDownloads.has(song.id)) "Remove download" else "Download", color = Ink) },
+                            leadingIcon = {
+                                Icon(if (OfflineDownloads.has(song.id)) Icons.Outlined.DownloadDone else Icons.Outlined.Download, null, tint = Cyan)
+                            },
+                            onClick = { OfflineDownloads.toggle(song); showActions = false },
+                        )
+                    }
+                    DropdownMenuItem(
+                        text = { Text(if (favorite) "Remove from Favorites" else "Add to Favorites", color = Ink) },
+                        leadingIcon = { Icon(if (favorite) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder, null, tint = Cyan) },
+                        onClick = {
+                            favorite = favoriteStore?.toggle(song) ?: !favorite
+                            showActions = false
+                        },
+                    )
+                    if (lyrics != null) {
+                        DropdownMenuItem(
+                            text = { Text(if (lyricsOn) "Hide lyrics" else "Show lyrics", color = Ink) },
+                            leadingIcon = { Icon(Icons.Outlined.Lyrics, null, tint = Cyan) },
+                            onClick = { lyricsOn = !lyricsOn; showActions = false },
+                        )
+                    }
+                    DropdownMenuItem(
+                        text = { Text("Sleep timer", color = Ink) },
+                        leadingIcon = { Icon(Icons.Outlined.Timer, null, tint = Cyan) },
+                        onClick = { showActions = false; showSleep = true },
+                    )
+                }
             }
         }
         Text("${formatTime(duration)}  ·  ${player.queue.size} Tracks", color = Color(0xFFA0A9A4), fontSize = 11.sp)
-        Row(Modifier.fillMaxWidth().padding(top = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().padding(top = 20.dp).clickable { showQueue = true }.padding(vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text("Playing next", color = Color(0xFFB1B8B4), fontSize = 11.sp)
             Text(song.artist, Modifier.padding(start = 18.dp), color = Ink, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
         }
@@ -184,39 +240,6 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
             }
             IconButton(onClick = player::next) {
                 Icon(Icons.Outlined.SkipNext, "Next", tint = Cyan, modifier = Modifier.size(36.dp))
-            }
-        }
-        Row(
-            Modifier.fillMaxWidth().padding(top = 12.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (lyrics != null) {
-                IconButton(onClick = { lyricsOn = !lyricsOn }) {
-                    Icon(Icons.Outlined.Lyrics, "Lyrics", tint = if (lyricsOn) Cyan else Ink)
-                }
-            }
-            IconButton(onClick = { showQueue = true }) {
-                Icon(Icons.AutoMirrored.Outlined.QueueMusic, "Queue", tint = Ink)
-            }
-            IconButton(onClick = { showSleep = true }) {
-                Icon(Icons.Outlined.Bedtime, "Sleep timer", tint = if (player.sleepActive) Cyan else Ink)
-            }
-            if (song.canDownload) {
-                val downloading = song.id in OfflineDownloads.progressing
-                val downloaded = OfflineDownloads.has(song.id)
-                IconButton(onClick = { OfflineDownloads.toggle(song) }) {
-                    when {
-                        downloading -> CircularProgressIndicator(
-                            progress = { OfflineDownloads.progress[song.id] ?: 0f },
-                            color = Cyan,
-                            strokeWidth = 2.dp,
-                            modifier = Modifier.size(22.dp),
-                        )
-                        downloaded -> Icon(Icons.Outlined.DownloadDone, "Remove download", tint = Cyan)
-                        else -> Icon(Icons.Outlined.Download, "Download", tint = Ink)
-                    }
-                }
             }
         }
     }

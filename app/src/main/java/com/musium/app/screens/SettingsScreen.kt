@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material3.Icon
@@ -27,13 +29,16 @@ private val SettingsAqua = Color(0xFF42E4CE)
 private val SettingsText = Color(0xFF4D5651)
 
 @Composable
-internal fun SettingsScreen() {
+internal fun SettingsScreen(onBack: () -> Unit = {}) {
     Column(
         Modifier.fillMaxSize().background(Color.White).safeDrawingPadding().padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        IconButton(onClick = {}, modifier = Modifier.padding(top = 38.dp)) {
-            Icon(Icons.Outlined.KeyboardArrowDown, "Settings", tint = Color(0xFFD1D5D2))
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier.padding(top = 38.dp).size(38.dp).background(Color(0xFFE1E5E2), CircleShape),
+        ) {
+            Icon(Icons.Outlined.KeyboardArrowDown, "Settings", tint = Color(0xFF727A76))
         }
         SettingsOption("Push Notifications", "Currently on")
         SettingsOption("Account & Privacy", "Manage your account")
