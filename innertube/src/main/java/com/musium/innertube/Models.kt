@@ -93,5 +93,4 @@ data class BrowsePage(
     val thumbnail: String? = null,
     val songs: List<SongItem> = emptyList(),
     val sections: List<HomeSection> = emptyList(),
-    val radioVideoId: String? = null,
 )

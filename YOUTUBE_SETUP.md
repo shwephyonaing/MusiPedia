@@ -19,7 +19,7 @@ Open the app, skip or tap through login, then:
 - **Home** loads live YouTube Music sections
 - **Explore** searches songs, artists, albums, and playlists
 - Tap a song to play audio in the background (notification controls)
-- Open an artist / album / playlist and use **Play** or **Radio**
+- Open an artist / album / playlist and use **Play**
 - **Library** keeps local files and recently played tracks in the same player
 
 ## Notes

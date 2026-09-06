@@ -1,23 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 240" fill="none">
   <rect width="900" height="240" fill="#0B0B0B"/>
-  <text
-    x="40"
-    y="148"
-    fill="#FFFFFF"
-    font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
-    font-size="92"
-    font-weight="500"
-    letter-spacing="-2.4">Musi</text>
-  <g transform="translate(214,76)">
-    <rect x="0" y="0" width="8.5" height="66" fill="#00C2CB"/>
-    <path fill="#00C2CB" fill-rule="evenodd" d="M7 0a20.5 20.5 0 1 1 0 41a20.5 20.5 0 1 1 0-41zm0 16a4.5 4.5 0 1 0 0 9a4.5 4.5 0 1 0 0-9z"/>
+  <g transform="translate(56,72)">
+    <rect x="0" y="0" width="12" height="88" rx="6" fill="#00C2CB"/>
+    <rect x="20" y="39" width="12" height="49" rx="6" fill="#00C2CB"/>
+    <rect x="40" y="61.6" width="12" height="26.4" rx="6" fill="#00C2CB"/>
+    <rect x="60" y="33.4" width="12" height="54.6" rx="6" fill="#00C2CB"/>
+    <rect x="80" y="0" width="12" height="88" rx="6" fill="#00C2CB"/>
   </g>
   <text
-    x="268"
+    x="176"
     y="148"
     fill="#FFFFFF"
     font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
     font-size="92"
     font-weight="500"
-    letter-spacing="-2.4">edia</text>
+    letter-spacing="-2.6">usiPedia</text>
 </svg>

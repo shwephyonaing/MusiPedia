@@ -99,7 +99,6 @@ internal fun parseBrowsePage(root: JSONObject, fallbackTitle: String): BrowsePag
     var title = fallbackTitle
     var subtitle: String? = null
     var thumbnail: String? = null
-    var radioVideoId: String? = null
     root.walkObjects { key, obj ->
         if (key == "musicImmersiveHeaderRenderer" || key == "musicVisualHeaderRenderer" ||
             key == "musicResponsiveHeaderRenderer" || key == "musicDetailHeaderRenderer"
@@ -107,10 +106,6 @@ internal fun parseBrowsePage(root: JSONObject, fallbackTitle: String): BrowsePag
             obj.runsText("title")?.let { title = it }
             subtitle = obj.runsText("subtitle") ?: obj.runsText("straplineTextOne") ?: subtitle
             thumbnail = obj.bestThumbnail() ?: thumbnail
-            radioVideoId = obj.firstVideoId() ?: radioVideoId
-        }
-        if (key == "startRadioButton" || key == "radioButton") {
-            radioVideoId = obj.firstVideoId() ?: radioVideoId
         }
     }
     val songs = collectItems(root).filterIsInstance<SongItem>().distinctBy { it.id }
@@ -123,7 +118,6 @@ internal fun parseBrowsePage(root: JSONObject, fallbackTitle: String): BrowsePag
         thumbnail = thumbnail ?: songs.firstOrNull()?.thumbnail,
         songs = songs,
         sections = sections,
-        radioVideoId = radioVideoId ?: songs.firstOrNull()?.id,
     )
 }
 
@@ -137,18 +131,6 @@ internal fun parseNextSongs(root: JSONObject): List<SongItem> {
         collectItems(root).filterIsInstance<SongItem>().forEach { songs.putIfAbsent(it.id, it) }
     }
     return songs.values.toList()
-}
-
-internal fun parseAutomixPlaylistId(root: JSONObject): Pair<String?, String?> {
-    var videoId: String? = null
-    var playlistId: String? = null
-    root.walkObjects { key, obj ->
-        if (key == "watchPlaylistEndpoint" || key == "watchEndpoint") {
-            videoId = obj.str("videoId") ?: videoId
-            playlistId = obj.str("playlistId") ?: playlistId
-        }
-    }
-    return videoId to playlistId
 }
 
 internal fun parseYoutubeVideos(root: JSONObject): List<SongItem> {

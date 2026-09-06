@@ -20,13 +20,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Radio
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -112,25 +110,14 @@ private fun BrowseScaffold(pageId: String, titleHint: String, onBack: () -> Unit
                             )
                             Text(page.title, Modifier.padding(top = 16.dp), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                             page.subtitle?.let { Text(it, Modifier.padding(top = 6.dp), color = Color(0xFF8A9A9D), fontSize = 14.sp) }
-                            Row(Modifier.padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Button(
-                                    onClick = { if (queue.isNotEmpty()) player?.play(queue, 0) },
-                                    enabled = queue.isNotEmpty(),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Cyan, contentColor = Color.Black),
-                                ) {
-                                    Icon(Icons.Outlined.PlayArrow, null)
-                                    Text("Play", Modifier.padding(start = 6.dp), fontWeight = FontWeight.Bold)
-                                }
-                                OutlinedButton(
-                                    onClick = {
-                                        val seed = queue.firstOrNull() ?: page.radioVideoId?.let { PlayableSong(it, page.title, page.subtitle ?: "") }
-                                        seed?.let { player?.playRadio(it) }
-                                    },
-                                    enabled = queue.isNotEmpty() || page.radioVideoId != null,
-                                ) {
-                                    Icon(Icons.Outlined.Radio, null, tint = Cyan)
-                                    Text("Radio", Modifier.padding(start = 6.dp), color = Cyan, fontWeight = FontWeight.Bold)
-                                }
+                            Button(
+                                onClick = { if (queue.isNotEmpty()) player?.play(queue, 0) },
+                                enabled = queue.isNotEmpty(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Cyan, contentColor = Color.Black),
+                                modifier = Modifier.padding(top = 16.dp),
+                            ) {
+                                Icon(Icons.Outlined.PlayArrow, null)
+                                Text("Play", Modifier.padding(start = 6.dp), fontWeight = FontWeight.Bold)
                             }
                         }
                     }

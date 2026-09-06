@@ -152,15 +152,7 @@ private fun HomeTile(item: YtItem, onClick: () -> Unit) {
 
 @Composable
 internal fun Header() {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 28.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(Modifier.size(38.dp).clip(RoundedCornerShape(50)).background(Cyan), contentAlignment = Alignment.Center) {
-            Text("M", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        }
-        Text("MusiPedia", Modifier.padding(start = 15.dp), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-    }
+    BrandLockup(Modifier.fillMaxWidth().padding(horizontal = 28.dp), textSize = 24.sp)
 }
 
 @Composable

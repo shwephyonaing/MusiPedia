@@ -1,4 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" fill="none">
-  <rect x="28" y="18" width="10" height="72" fill="#00C2CB"/>
-  <path fill="#00C2CB" fill-rule="evenodd" d="M36 18a27 27 0 1 1 0 54a27 27 0 1 1 0-54zm0 21a6 6 0 1 0 0 12a6 6 0 1 0 0-12z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 64" fill="none">
+  <rect x="0" y="0" width="10" height="64" rx="5" fill="#00C2CB"/>
+  <rect x="15.5" y="28" width="10" height="36" rx="5" fill="#00C2CB"/>
+  <rect x="31" y="44.8" width="10" height="19.2" rx="5" fill="#00C2CB"/>
+  <rect x="46.5" y="24.3" width="10" height="39.7" rx="5" fill="#00C2CB"/>
+  <rect x="62" y="0" width="10" height="64" rx="5" fill="#00C2CB"/>
 </svg>

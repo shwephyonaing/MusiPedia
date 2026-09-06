@@ -137,41 +137,6 @@ class Innertube(
         return if (timed?.synced == true) timed else web ?: timed
     }
 
-    fun nextRadio(videoId: String): List<SongItem> {
-        val radioPlaylist = "RDAMVM$videoId"
-        val first = post(
-            "next",
-            mapOf(
-                "videoId" to videoId,
-                "playlistId" to radioPlaylist,
-                "isAudioOnly" to true,
-            ),
-        )
-        var songs = parseNextSongs(first)
-        if (songs.size < 2) {
-            val (mixVideo, mixPlaylist) = parseAutomixPlaylistId(first)
-            if (mixPlaylist != null) {
-                val second = post(
-                    "next",
-                    buildMap {
-                        put("playlistId", mixPlaylist)
-                        put("isAudioOnly", true)
-                        mixVideo?.let { put("videoId", it) }
-                    },
-                )
-                songs = (songs + parseNextSongs(second)).distinctBy { it.id }
-            }
-        }
-        if (songs.isEmpty()) {
-            val queue = post(
-                "music/get_queue",
-                mapOf("playlistId" to radioPlaylist, "videoIds" to listOf(videoId)),
-            )
-            songs = parseNextSongs(queue)
-        }
-        return songs
-    }
-
     fun nextPlaylist(playlistId: String, videoId: String? = null): List<SongItem> {
         val body = buildMap<String, Any> {
             put("playlistId", playlistId)
@@ -189,10 +154,7 @@ class Innertube(
                 parseBrowsePage(post("browse", mapOf("browseId" to browseId)), "Playlist").songs
             }.getOrDefault(emptyList())
         }.distinctBy { it.id }
-        return page.copy(
-            songs = extra,
-            radioVideoId = page.radioVideoId ?: extra.firstOrNull()?.id,
-        )
+        return page.copy(songs = extra)
     }
 
     private fun googleSuggest(query: String): List<String> {

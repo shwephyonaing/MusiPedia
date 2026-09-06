@@ -101,15 +101,15 @@ func drawDNote(at origin: CGPoint, em: CGFloat, color: NSColor) -> CGFloat {
     return headW + stemW + em * 0.12
 }
 
-/// Capital M as equalizer bars tracing an M silhouette.
+/// Capital M as five equalizer bars.
 func drawMEqualizer(at origin: CGPoint, em: CGFloat, color: NSColor) -> CGFloat {
     let font = wordmarkFont(size: em)
     let cap = font.capHeight
     let mW = textSize("M", size: em).width
     let bars = 5
-    let barW = max(2.0, em * 0.078)
+    let barW = max(2.4, em * 0.090)
     let gap = (mW - CGFloat(bars) * barW) / CGFloat(bars - 1)
-    let heights: [CGFloat] = [1.0, 0.70, 0.36, 0.70, 1.0]
+    let heights: [CGFloat] = [1.00, 0.56, 0.30, 0.62, 1.00]
     color.setFill()
     for i in 0..<bars {
         let h = cap * heights[i]
@@ -305,3 +305,15 @@ savePNG(icon { disc, color in
     let iW = textSize("i", size: em).width
     _ = drawINoteDot(at: CGPoint(x: disc.midX - iW / 2, y: disc.midY - wordmarkFont(size: em).xHeight / 2 - em * 0.08), em: em, color: color)
 }, to: out.appendingPathComponent("musicpedia-icon-i.png"))
+
+savePNG(image(width: 1024, height: 1024) { rect in
+    ink.setFill()
+    rect.fill()
+    let em = rect.width * 0.46
+    let mW = textSize("M", size: em).width
+    _ = drawMEqualizer(
+        at: CGPoint(x: rect.midX - mW / 2, y: rect.midY - wordmarkFont(size: em).capHeight / 2),
+        em: em,
+        color: cyan
+    )
+}, to: out.appendingPathComponent("musicpedia-icon.png"))

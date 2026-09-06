@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -139,9 +140,9 @@ internal fun ExploreScreen() {
             contentPadding = PaddingValues(top = 54.dp, bottom = 170.dp),
         ) {
             item {
-                Row(Modifier.padding(horizontal = 38.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("♩", color = Cyan, fontSize = 34.sp)
-                    Text("Search", Modifier.padding(start = 12.dp), color = Cyan, fontSize = 27.sp, fontWeight = FontWeight.Bold)
+                Row(Modifier.padding(horizontal = 28.dp), verticalAlignment = Alignment.CenterVertically) {
+                    BrandMark(Modifier.height(28.dp).width(32.dp), Cyan)
+                    Text("Search", Modifier.padding(start = 12.dp), color = Cyan, fontSize = 26.sp, fontWeight = FontWeight.Bold)
                 }
             }
             item {

@@ -11,8 +11,6 @@ import androidx.media3.common.Player
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
 
 class PlayerConnection(val service: MusicService) : Player.Listener {
     var current by mutableStateOf(service.currentSong())
@@ -22,8 +20,6 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
     var duration by mutableLongStateOf(service.player.duration.coerceAtLeast(0L))
         private set
     var queue by mutableStateOf(service.queue())
-        private set
-    var loadingRadio by mutableStateOf(false)
         private set
     var lastError by mutableStateOf<String?>(null)
         private set
@@ -65,25 +61,6 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
         lastError = null
         PlayLog.d("ui play index=$index size=${songs.size} first=${songs.getOrNull(index)?.title}")
         service.playQueue(OfflineDownloads.attachAll(songs), index)
-    }
-
-    fun playRadio(seed: PlayableSong) {
-        if (seed.isLocal) {
-            play(listOf(seed), 0)
-            return
-        }
-        loadingRadio = true
-        service.scope.launch {
-            val remote = runCatching { MusicRepository.radio(seed.id) }.getOrDefault(emptyList())
-            val songs = buildList {
-                add(seed)
-                remote.map { it.toPlayable() }.filter { it.id != seed.id }.forEach(::add)
-            }
-            withContext(Dispatchers.Main) {
-                loadingRadio = false
-                play(songs, 0)
-            }
-        }
     }
 
     fun togglePlay() {
