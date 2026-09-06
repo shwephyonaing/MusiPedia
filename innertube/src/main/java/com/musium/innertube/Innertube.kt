@@ -14,10 +14,18 @@ class Innertube(
     private val hl: String = "en",
     private val gl: String = "US",
 ) {
+    private val youtubeGl = youtubeRegion(gl)
     private val http = OkHttpClient.Builder()
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(20, TimeUnit.SECONDS)
+        .connectTimeout(12, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
+        .dispatcher(
+            okhttp3.Dispatcher().apply {
+                maxRequests = 32
+                maxRequestsPerHost = 12
+            },
+        )
         .build()
+    @Volatile private var youtubeMusicOk = true
 
     fun search(query: String): SearchPage {
         var page = searchMusic(query)
@@ -56,14 +64,119 @@ class Innertube(
             .filterNot(MusicCatalog::isNonMusicQuery)
     }
 
-    fun home(): List<HomeSection> {
-        val sections = LinkedHashMap<String, HomeSection>()
-        listOf("FEmusic_home", "FEmusic_explore", "FEmusic_charts").forEach { browseId ->
-            runCatching { parseSections(post("browse", mapOf("browseId" to browseId))) }
-                .getOrDefault(emptyList())
-                .forEach { section -> sections.putIfAbsent(section.title, section) }
+    fun ytmCharts(): List<SongItem> {
+        val country = youtubeGl
+        val withCountry = runCatching {
+            post(
+                "browse",
+                mapOf(
+                    "browseId" to "FEmusic_charts",
+                    "formData" to mapOf("selectedValues" to listOf(country)),
+                ),
+            )
+        }.getOrNull()
+        songsFromCharts(withCountry).takeIf { it.isNotEmpty() }?.let { return it }
+        val fallback = runCatching { post("browse", mapOf("browseId" to "FEmusic_charts")) }.getOrNull()
+        return songsFromCharts(fallback).ifEmpty { songsFromCharts(withCountry) }
+    }
+
+    fun appleMostPlayed(limit: Int = 10, chartCountry: String? = null): List<ChartTrack> {
+        val preferred = chartCountry?.lowercase()?.takeIf { it.isNotBlank() }
+        val countries = if (preferred != null) {
+            listOf(preferred, "us").distinct()
+        } else {
+            listOfNotNull(gl.lowercase().takeIf { it.isNotBlank() }, "mm", "us").distinct()
         }
-        return sections.values.filter { it.items.isNotEmpty() }
+        for (country in countries) {
+            val tracks = runCatching { appleMarketingCharts(country, limit) }.getOrDefault(emptyList())
+                .ifEmpty { runCatching { itunesTopSongs(country, limit) }.getOrDefault(emptyList()) }
+            if (tracks.isNotEmpty()) return tracks.take(limit)
+        }
+        return emptyList()
+    }
+
+    fun findSong(query: String, youtubeOnly: Boolean = false): SongItem? {
+        val trimmed = query.trim()
+        if (trimmed.isBlank()) return null
+        if (!youtubeOnly && youtubeMusicOk) {
+            val music = runCatching {
+                parseSearch(post("search", mapOf("query" to trimmed, "params" to FILTER_SONG)))
+            }.getOrDefault(SearchPage.Empty).songs
+            MusicCatalog.preferOfficial(music, trimmed).firstOrNull()?.let { return it }
+            music.firstOrNull()?.let { return it }
+        }
+        val videos = runCatching { searchYoutubeVideos(trimmed) }.getOrDefault(emptyList())
+        return MusicCatalog.preferOfficial(videos, trimmed).firstOrNull() ?: videos.firstOrNull()
+    }
+
+    fun relatedSongs(videoId: String, youtubeOnly: Boolean = false): List<SongItem> {
+        if (!videoId.isYoutubeVideoId()) return emptyList()
+        if (!youtubeOnly && youtubeMusicOk) {
+            val fromMusic = runCatching {
+                parseNextSongs(
+                    post(
+                        "next",
+                        mapOf(
+                            "videoId" to videoId,
+                            "playlistId" to "RDAMVM$videoId",
+                            "isAudioOnly" to true,
+                        ),
+                    ),
+                )
+            }.getOrDefault(emptyList())
+            if (fromMusic.size > 1) {
+                return fromMusic.filter { it.id != videoId && !MusicCatalog.isNonMusic(it.title, it.subtitle) }
+            }
+        }
+        return youtubeRadio(videoId)
+            .filter { it.id != videoId && !MusicCatalog.isNonMusic(it.title, it.subtitle) }
+    }
+
+    fun mixAround(seed: SongItem?, youtubeOnly: Boolean = false): List<SongItem> {
+        if (seed == null) return emptyList()
+        val resolved = when {
+            seed.id.isYoutubeVideoId() -> seed
+            else -> runCatching {
+                findSong(listOfNotNull(seed.title, seed.subtitle).joinToString(" "), youtubeOnly)
+            }.getOrNull()
+        } ?: return emptyList()
+        val related = runCatching { relatedSongs(resolved.id, youtubeOnly) }.getOrDefault(emptyList())
+        return (listOf(resolved) + related).distinctBy { it.id }
+    }
+
+    private fun youtubeRadio(videoId: String): List<SongItem> {
+        // One good radio call is enough; avoid stacking 3 round-trips on the home path.
+        val songs = runCatching {
+            parseNextSongs(
+                youtubeWebPost(
+                    "next",
+                    mapOf("videoId" to videoId, "playlistId" to "RDAMVM$videoId", "params" to "wAEB"),
+                ),
+            )
+        }.getOrDefault(emptyList())
+        if (songs.size > 1) return songs
+        return runCatching {
+            parseNextSongs(youtubeWebPost("next", mapOf("videoId" to videoId)))
+        }.getOrDefault(emptyList())
+    }
+
+    private fun songsFromCharts(root: JSONObject?): List<SongItem> {
+        if (root == null) return emptyList()
+        val songs = LinkedHashMap<String, SongItem>()
+        val playlists = mutableListOf<PlaylistItem>()
+        parseSections(root).forEach { section ->
+            section.items.forEach { item ->
+                when (item) {
+                    is SongItem -> songs.putIfAbsent(item.id, item)
+                    is PlaylistItem -> playlists += item
+                    else -> Unit
+                }
+            }
+        }
+        if (songs.isNotEmpty()) return songs.values.toList()
+        return playlists.firstOrNull()?.let { chart ->
+            runCatching { playlist(chart.id).songs }.getOrDefault(emptyList())
+        }.orEmpty()
     }
 
     fun artist(browseId: String): BrowsePage {
@@ -186,6 +299,10 @@ class Innertube(
     }
 
     private fun searchYoutubeVideos(query: String): List<SongItem> {
+        return parseYoutubeVideos(youtubeWebPost("search", mapOf("query" to query, "params" to FILTER_WEB_VIDEO)))
+    }
+
+    private fun youtubeWebPost(endpoint: String, extra: Map<String, Any?>): JSONObject {
         val payload = JSONObject()
             .put(
                 "context",
@@ -195,13 +312,12 @@ class Innertube(
                         .put("clientName", "WEB")
                         .put("clientVersion", WEB_VERSION)
                         .put("hl", hl)
-                        .put("gl", gl),
+                        .put("gl", youtubeGl),
                 ),
             )
-            .put("query", query)
-            .put("params", FILTER_WEB_VIDEO)
+        extra.forEach { (key, value) -> jsonValue(value)?.let { payload.put(key, it) } }
         val request = Request.Builder()
-            .url("https://www.youtube.com/youtubei/v1/search?prettyPrint=false&key=$API_KEY")
+            .url("https://www.youtube.com/youtubei/v1/$endpoint?prettyPrint=false&key=$API_KEY")
             .post(payload.toString().toRequestBody(JSON))
             .header("User-Agent", USER_AGENT)
             .header("Content-Type", "application/json")
@@ -210,8 +326,8 @@ class Innertube(
             .build()
         http.newCall(request).execute().use { response ->
             val text = response.body?.string().orEmpty()
-            if (!response.isSuccessful) error("YouTube search failed (${response.code})")
-            return parseYoutubeVideos(JSONObject(text))
+            if (!response.isSuccessful) error("YouTube $endpoint failed (${response.code}): ${text.take(180)}")
+            return JSONObject(text)
         }
     }
 
@@ -220,7 +336,7 @@ class Innertube(
             .put("clientName", client.name)
             .put("clientVersion", client.version)
             .put("hl", hl)
-            .put("gl", gl)
+            .put("gl", youtubeGl)
         client.extra.forEach { (key, value) -> clientJson.put(key, value) }
         val context = JSONObject().put("client", clientJson)
         client.embedUrl?.let { context.put("thirdParty", JSONObject().put("embedUrl", it)) }
@@ -252,7 +368,7 @@ class Innertube(
             .put("clientName", client.name)
             .put("clientVersion", client.version)
             .put("hl", hl)
-            .put("gl", gl)
+            .put("gl", youtubeGl)
         client.extra.forEach { (key, value) -> clientJson.put(key, value) }
         val payload = JSONObject()
             .put("context", JSONObject().put("client", clientJson))
@@ -273,6 +389,7 @@ class Innertube(
     }
 
     private fun post(endpoint: String, extra: Map<String, Any?>): JSONObject {
+        check(youtubeMusicOk) { "YouTube Music unavailable" }
         val payload = JSONObject()
             .put(
                 "context",
@@ -282,16 +399,12 @@ class Innertube(
                         .put("clientName", CLIENT_NAME)
                         .put("clientVersion", CLIENT_VERSION)
                         .put("hl", hl)
-                        .put("gl", gl)
+                        .put("gl", youtubeGl)
                         .put("visitorData", VISITOR_DATA),
                 ),
             )
         extra.forEach { (key, value) ->
-            when (value) {
-                null -> Unit
-                is List<*> -> payload.put(key, JSONArray(value))
-                else -> payload.put(key, value)
-            }
+            jsonValue(value)?.let { payload.put(key, it) }
         }
         val url = "$BASE$endpoint?prettyPrint=false&key=$API_KEY"
         val request = Request.Builder()
@@ -309,10 +422,77 @@ class Innertube(
         http.newCall(request).execute().use { response ->
             val text = response.body?.string().orEmpty()
             if (!response.isSuccessful) {
+                if (response.code == 400) youtubeMusicOk = false
                 error("YouTube Music $endpoint failed (${response.code}): ${text.take(180)}")
             }
+            val json = JSONObject(text)
+            if (text.contains("isn't available in your country", ignoreCase = true)) {
+                youtubeMusicOk = false
+            }
+            return json
+        }
+    }
+
+    private fun appleMarketingCharts(country: String, limit: Int): List<ChartTrack> {
+        val url = "https://rss.marketingtools.apple.com/api/v2/$country/music/most-played/$limit/songs.json"
+        val results = getJson(url).optJSONObject("feed")?.optJSONArray("results") ?: return emptyList()
+        return buildList {
+            for (index in 0 until results.length()) {
+                val item = results.optJSONObject(index) ?: continue
+                val title = item.optString("name").trim()
+                val artist = item.optString("artistName").trim()
+                if (title.isBlank() || artist.isBlank()) continue
+                add(ChartTrack(title, artist, item.optString("artworkUrl100").upgradeArtwork()))
+            }
+        }
+    }
+
+    private fun itunesTopSongs(country: String, limit: Int): List<ChartTrack> {
+        val url = "https://itunes.apple.com/$country/rss/topsongs/limit=$limit/json"
+        val entry = getJson(url).optJSONObject("feed")?.opt("entry") ?: return emptyList()
+        val items = when (entry) {
+            is JSONArray -> entry
+            is JSONObject -> JSONArray().put(entry)
+            else -> return emptyList()
+        }
+        return buildList {
+            for (index in 0 until items.length()) {
+                val item = items.optJSONObject(index) ?: continue
+                val title = item.optJSONObject("im:name")?.optString("label").orEmpty().trim()
+                val artist = item.optJSONObject("im:artist")?.optString("label").orEmpty().trim()
+                if (title.isBlank() || artist.isBlank()) continue
+                val images = item.optJSONArray("im:image")
+                val artwork = images?.optJSONObject(images.length() - 1)?.optString("label")?.upgradeArtwork()
+                add(ChartTrack(title, artist, artwork))
+            }
+        }
+    }
+
+    private fun getJson(url: String): JSONObject {
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", USER_AGENT)
+            .header("Accept", "application/json")
+            .build()
+        http.newCall(request).execute().use { response ->
+            val text = response.body?.string().orEmpty()
+            if (!response.isSuccessful) error("GET $url failed (${response.code})")
             return JSONObject(text)
         }
+    }
+
+    private fun jsonValue(value: Any?): Any? = when (value) {
+        null -> null
+        is JSONObject, is JSONArray, is Number, is Boolean, is String -> value
+        is Map<*, *> -> JSONObject().also { obj ->
+            value.forEach { (key, nested) ->
+                jsonValue(nested)?.let { obj.put(key.toString(), it) }
+            }
+        }
+        is List<*> -> JSONArray().also { array ->
+            value.forEach { nested -> jsonValue(nested)?.let(array::put) }
+        }
+        else -> value.toString()
     }
 
     companion object {
@@ -387,4 +567,19 @@ class Innertube(
         val extra: Map<String, Any> = emptyMap(),
         val embedUrl: String? = null,
     )
+}
+
+private fun youtubeRegion(gl: String): String {
+    val country = gl.uppercase()
+    return if (country in YOUTUBE_UNAVAILABLE) "US" else country.ifBlank { "US" }
+}
+
+private val YOUTUBE_UNAVAILABLE = setOf("MM", "CN", "IR", "KP", "SY", "CU", "BY", "TM", "AF")
+
+private fun String.isYoutubeVideoId(): Boolean =
+    matches(Regex("""^[A-Za-z0-9_-]{11}$"""))
+
+private fun String.upgradeArtwork(): String? {
+    if (isBlank()) return null
+    return replace("100x100", "600x600").replace("60x60", "600x600")
 }

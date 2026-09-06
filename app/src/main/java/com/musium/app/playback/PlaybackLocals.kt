@@ -14,6 +14,7 @@ sealed class MusicRoute {
     data class Artist(val id: String, val name: String) : MusicRoute()
     data class Album(val id: String, val name: String) : MusicRoute()
     data class Playlist(val id: String, val name: String) : MusicRoute()
+    data object Downloads : MusicRoute()
 }
 
 fun YtItem.open(player: PlayerConnection?, router: (MusicRoute) -> Unit, queue: List<PlayableSong>? = null) {

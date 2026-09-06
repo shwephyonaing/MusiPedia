@@ -88,6 +88,7 @@ fun MusiumHomeScreen() {
                     is MusicRoute.Artist -> ArtistScreen(route.id, route.name, onBack = { goBack() })
                     is MusicRoute.Album -> AlbumScreen(route.id, route.name, onBack = { goBack() })
                     is MusicRoute.Playlist -> PlaylistScreen(route.id, route.name, onBack = { goBack() })
+                    MusicRoute.Downloads -> DownloadsScreen(onBack = { goBack() }, onOpenPlayer = { fullPlayer = true })
                     null -> Unit
                 }
             }

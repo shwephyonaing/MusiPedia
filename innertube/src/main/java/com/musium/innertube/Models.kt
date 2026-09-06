@@ -44,6 +44,12 @@ data class HomeSection(
     val items: List<YtItem>,
 )
 
+data class ChartTrack(
+    val title: String,
+    val artist: String,
+    val artwork: String? = null,
+)
+
 data class SearchPage(
     val songs: List<SongItem>,
     val artists: List<ArtistItem>,

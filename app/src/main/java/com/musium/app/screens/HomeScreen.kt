@@ -1,15 +1,14 @@
 package com.musium.app
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,34 +34,24 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.musium.innertube.AlbumItem
 import com.musium.innertube.HomeSection
+import com.musium.innertube.PlaylistItem
 import com.musium.innertube.SongItem
 import com.musium.innertube.YtItem
 
 private val Cyan = Color(0xFF42E4CE)
-private val PageBlack = Color(0xFFFAFAF8)
+private val Page = Color(0xFFFAFAF8)
 private val Tile = Color(0xFFF0F0EC)
 private val Ink = Color(0xFF3F4944)
-
-private data class DemoMood(val image: Int, val title: String, val duration: String)
-
-private val forYouMoods = listOf(
-    DemoMood(R.drawable.anything_goes, "Funky Vibes", "2 hours"),
-    DemoMood(R.drawable.pop_mix, "Emotional Eaters", "35 min"),
-    DemoMood(R.drawable.chill_mix, "Soft Sundays", "3 hours"),
-)
-
-private val popularMoods = listOf(
-    DemoMood(R.drawable.recent_harry, "Feeling Artsy", "42 min"),
-    DemoMood(R.drawable.library_vibes, "Late Night Vibes", "1 hour"),
-    DemoMood(R.drawable.released, "Fresh Sounds", "55 min"),
-    DemoMood(R.drawable.coffee_jazz, "Coffee & Jazz", "2 hours"),
-)
+private val Mute = Color(0xFFA3ACA7)
 
 private sealed interface HomeUi {
     data object Loading : HomeUi
@@ -74,126 +63,292 @@ private sealed interface HomeUi {
 internal fun HomeContent() {
     val player = LocalPlayerConnection.current
     val router = LocalMusicRouter.current
+    val context = LocalContext.current
+    val recentsStore = (context.applicationContext as? MusiumApplication)?.recentStore
+    var recents by remember { mutableStateOf(recentsStore?.songs().orEmpty()) }
     var state by remember { mutableStateOf<HomeUi>(HomeUi.Loading) }
     var reload by remember { mutableStateOf(0) }
+    val downloads = (OfflineDownloads.inFlight.values + OfflineDownloads.songs).distinctBy { it.id }
+    val lastListened = recents.firstOrNull()
 
+    LaunchedEffect(player?.current?.id, player?.playing) {
+        recents = recentsStore?.songs().orEmpty()
+    }
+    LaunchedEffect(Unit) {
+        val seeds = recentsStore?.songs().orEmpty().take(5)
+        runCatching {
+            MusicRepository.homeFeed(seeds, force = false).collect { sections ->
+                state = HomeUi.Ready(sections)
+            }
+        }.onFailure {
+            if (state !is HomeUi.Ready) {
+                state = HomeUi.Error(it.message ?: "Unable to load charts")
+            }
+        }
+    }
     LaunchedEffect(reload) {
+        if (reload == 0) return@LaunchedEffect
         state = HomeUi.Loading
-        state = runCatching { MusicRepository.home() }.fold(
-            onSuccess = { HomeUi.Ready(it) },
-            onFailure = { HomeUi.Error(it.message ?: "Unable to load YouTube Music") },
-        )
+        val seeds = recentsStore?.songs().orEmpty().take(5)
+        runCatching {
+            MusicRepository.homeFeed(seeds, force = true).collect { sections ->
+                state = HomeUi.Ready(sections)
+            }
+        }.onFailure {
+            state = HomeUi.Error(it.message ?: "Unable to load charts")
+        }
     }
 
-    Box(Modifier.fillMaxSize().background(PageBlack)) {
+    val ready = state as? HomeUi.Ready
+    val forYou = ready?.named("For You")
+    val trending = ready?.named("Trending")
+    val returning = lastListened != null
+    val hero = if (returning) {
+        lastListened.toFeaturedItem()
+    } else {
+        listOfNotNull(trending?.firstOrNull(), forYou?.firstOrNull())
+            .firstOrNull { !it.thumbnail.isNullOrBlank() }
+            ?: trending?.firstOrNull()
+            ?: forYou?.firstOrNull()
+    }
+    val heroMode = if (returning) HeroMode.LastPlayed else HeroMode.Featured
+    val heroMeta = hero?.subtitle?.prettyTitle()?.takeIf { it.isNotBlank() }
+        ?: if (returning) "Continue listening" else "Trending now"
+
+    Box(Modifier.fillMaxSize().background(Page)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 106.dp),
         ) {
-            item { FeaturedHero() }
-            item { SectionTitle("For you", Modifier.padding(top = 12.dp)) }
-            item { DemoMoodRow(forYouMoods) }
-            item { SectionTitle("Popular", Modifier.padding(top = 18.dp)) }
-            item { DemoMoodRow(popularMoods) }
-            when (val current = state) {
-                HomeUi.Loading -> Unit
-                is HomeUi.Error -> item {
-                    TextButton(onClick = { reload += 1 }, Modifier.padding(28.dp)) { Text("Retry", color = Cyan, fontWeight = FontWeight.Bold) }
-                }
-                is HomeUi.Ready -> {
-                    current.sections.drop(2).forEach { section ->
-                        item { SectionTitle(section.title, Modifier.padding(top = 16.dp)) }
-                        item { HomeSectionRow(section) { item -> item.open(player, router, section.items.filterIsInstance<SongItem>().map { it.toPlayable() }) } }
+            item {
+                FeaturedHero(
+                    item = hero,
+                    mode = heroMode,
+                    meta = heroMeta,
+                ) {
+                    if (returning) {
+                        player?.play(recents, 0)
+                    } else {
+                        hero?.open(player, router, (trending.songs() + forYou.songs()).distinctBy { it.id })
                     }
                 }
             }
+            if (state is HomeUi.Error) {
+                item {
+                    TextButton(onClick = { reload += 1 }, Modifier.padding(horizontal = 14.dp, vertical = 4.dp)) {
+                        Text("Retry", color = Cyan, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+            item { SectionTitle("For You", Modifier.padding(top = 18.dp)) }
+            item { PosterRow(forYou, placeholders = 8) { item -> item.open(player, router, forYou.songs()) } }
+            if (downloads.isNotEmpty()) {
+                item {
+                    SectionTitleRow(
+                        title = "Downloads",
+                        action = "Show All",
+                        onAction = { router(MusicRoute.Downloads) },
+                        modifier = Modifier.padding(top = 22.dp),
+                    )
+                }
+                item { DownloadsRow(downloads.take(5), player) }
+            }
+            item { SectionTitle("Trending", Modifier.padding(top = 22.dp)) }
+            item { PosterRow(trending, placeholders = 10) { item -> item.open(player, router, trending.songs()) } }
+        }
+    }
+}
+
+private fun HomeUi.Ready.named(title: String): List<YtItem> =
+    sections.firstOrNull { it.title.equals(title, ignoreCase = true) }?.items.orEmpty()
+
+private fun HomeSection.songs(): List<PlayableSong> =
+    items.filterIsInstance<SongItem>().map { it.toPlayable() }
+
+private fun List<YtItem>?.songs(): List<PlayableSong> =
+    orEmpty().filterIsInstance<SongItem>().map { it.toPlayable() }
+
+private fun PlayableSong.toFeaturedItem() = SongItem(
+    id = id,
+    title = title,
+    subtitle = artist,
+    thumbnail = thumbnailUrl,
+    playlistId = playlistId,
+    artistId = artistId,
+    albumId = albumId,
+)
+
+private enum class HeroMode { Featured, LastPlayed }
+
+@Composable
+private fun FeaturedHero(item: YtItem?, mode: HeroMode, meta: String, onOpen: () -> Unit) {
+    val badge = when (mode) {
+        HeroMode.Featured -> "Featured"
+        HeroMode.LastPlayed -> "Last Played"
+    }
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .aspectRatio(414f / 463f)
+            .background(Color(0xFF0B0B0B))
+            .clickable(enabled = item != null, onClick = onOpen),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (item?.thumbnail.isNullOrBlank()) {
+            BrandMark(Modifier.height(92.dp).width(104.dp), Cyan)
+        } else {
+            AsyncImage(
+                item.thumbnail,
+                null,
+                Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        }
+        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.28f)))
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        0f to Color.Transparent,
+                        0.42f to Color.Transparent,
+                        0.72f to Color(0xCC000000),
+                        1f to Color(0xF2000000),
+                    ),
+                ),
+        )
+        Column(
+            Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(horizontal = 26.dp, vertical = 28.dp),
+        ) {
+            Text(
+                badge,
+                Modifier
+                    .border(1.dp, Color.White.copy(alpha = 0.85f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                color = Color.White,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 0.4.sp,
+            )
+            Text(
+                item?.title?.heroTitle() ?: "MusiPedia",
+                Modifier.padding(top = 12.dp),
+                color = Color.White,
+                fontSize = 30.sp,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold,
+                lineHeight = 34.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                meta,
+                Modifier.padding(top = 6.dp),
+                color = Color.White.copy(alpha = 0.88f),
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
 
 @Composable
-private fun DemoMoodRow(moods: List<DemoMood>) {
+private fun PosterRow(items: List<YtItem>?, placeholders: Int = 5, onOpen: (YtItem) -> Unit) {
+    val cards = items.orEmpty()
     LazyRow(
         contentPadding = PaddingValues(horizontal = 26.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        items(moods) { mood ->
-            Column(Modifier.width(158.dp)) {
-                Image(
-                    painter = painterResource(mood.image),
-                    contentDescription = mood.title,
-                    modifier = Modifier.size(158.dp).clip(RoundedCornerShape(10.dp)).background(Tile),
-                    contentScale = ContentScale.Crop,
+        if (cards.isEmpty()) {
+            items(placeholders) {
+                LogoCard()
+            }
+        } else {
+            items(cards, key = { it::class.simpleName + it.id }) { item ->
+                PosterCard(
+                    image = item.thumbnail,
+                    title = item.title.prettyTitle(),
+                    subtitle = item.cardMeta(),
+                    onClick = { onOpen(item) },
                 )
-                Text(mood.title, Modifier.padding(top = 8.dp), color = Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                Text(mood.duration, Modifier.padding(top = 2.dp), color = Color(0xFFA3ACA7), fontSize = 12.sp)
             }
         }
     }
 }
 
 @Composable
-private fun FeaturedHero() {
-    Image(
-        painter = painterResource(R.drawable.featured_all_about_summer),
-        contentDescription = "Featured album: All About Summer",
-        modifier = Modifier.fillMaxWidth().aspectRatio(414f / 463f),
-        contentScale = ContentScale.FillWidth,
-        alignment = Alignment.TopCenter,
-    )
+private fun LogoCard() {
+    Column(Modifier.width(158.dp)) {
+        Box(
+            Modifier.size(158.dp).clip(RoundedCornerShape(14.dp)).background(Tile),
+            contentAlignment = Alignment.Center,
+        ) {
+            BrandMark(Modifier.height(48.dp).width(54.dp), Cyan.copy(alpha = 0.7f))
+        }
+        Text(" ", Modifier.padding(top = 8.dp), fontSize = 15.sp)
+        Text(" ", Modifier.padding(top = 2.dp), fontSize = 12.sp)
+    }
 }
 
 @Composable
-private fun HomeSectionRow(section: HomeSection, onOpen: (YtItem) -> Unit) {
-    val songs = section.items.filterIsInstance<SongItem>()
-    if (songs.size >= 4 && songs.size == section.items.size) {
-        Column(
-            Modifier.padding(horizontal = 28.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            songs.take(6).chunked(2).forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    row.forEach { song ->
-                        QuickSongCard(song, Modifier.weight(1f)) { onOpen(song) }
-                    }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
+private fun DownloadsRow(songs: List<PlayableSong>, player: PlayerConnection?) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 26.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        items(songs, key = { it.id }) { song ->
+            Box {
+                PosterCard(
+                    image = song.thumbnailUrl,
+                    title = song.title.prettyTitle(),
+                    subtitle = song.artist.prettyTitle().ifBlank { "Downloaded" },
+                    onClick = {
+                        val queue = OfflineDownloads.songs
+                        player?.play(queue, queue.indexOfFirst { it.id == song.id }.coerceAtLeast(0))
+                    },
+                )
+                if (song.id in OfflineDownloads.progressing) {
+                    CircularProgressIndicator(
+                        progress = { OfflineDownloads.progress[song.id] ?: 0f },
+                        color = Cyan,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.align(Alignment.Center).padding(bottom = 36.dp).size(28.dp),
+                    )
                 }
             }
         }
-    } else {
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 26.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            items(section.items, key = { it::class.simpleName + it.id }) { item ->
-                HomeTile(item) { onOpen(item) }
-            }
-        }
     }
 }
 
 @Composable
-private fun QuickSongCard(song: SongItem, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Row(
-        modifier.height(55.dp).clip(RoundedCornerShape(10.dp)).background(Tile).clickable(onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        AsyncImage(song.thumbnail, song.title, Modifier.size(55.dp), contentScale = ContentScale.Crop)
-        Text(song.title, Modifier.padding(horizontal = 10.dp), Ink, 10.sp, fontWeight = FontWeight.Bold, maxLines = 2)
-    }
-}
-
-@Composable
-private fun HomeTile(item: YtItem, onClick: () -> Unit) {
-    Column(Modifier.width(150.dp).clickable(onClick = onClick)) {
+private fun PosterCard(
+    image: String?,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Column(Modifier.width(158.dp).clickable(onClick = onClick)) {
         AsyncImage(
-            item.thumbnail,
-            item.title,
-            Modifier.size(150.dp).clip(RoundedCornerShape(4.dp)).background(Tile),
+            image,
+            title,
+            Modifier.size(158.dp).clip(RoundedCornerShape(14.dp)).background(Tile),
             contentScale = ContentScale.Crop,
         )
-        Text(item.title, Modifier.padding(top = 8.dp), Ink, 13.sp, fontWeight = FontWeight.Bold, maxLines = 2)
-        item.subtitle?.let { Text(it, color = Color(0xFF8C9690), fontSize = 11.sp, maxLines = 1) }
+        Text(
+            title,
+            Modifier.padding(top = 8.dp),
+            color = Ink,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+        )
+        Text(subtitle, Modifier.padding(top = 2.dp), color = Mute, fontSize = 12.sp, maxLines = 1)
     }
 }
 
@@ -204,5 +359,50 @@ internal fun Header() {
 
 @Composable
 internal fun SectionTitle(text: String, modifier: Modifier = Modifier) {
-    Text(text, modifier.padding(horizontal = 26.dp, vertical = 8.dp), Ink, 23.sp, fontWeight = FontWeight.Bold)
+    Text(
+        text,
+        modifier.padding(horizontal = 26.dp, vertical = 8.dp),
+        Ink,
+        23.sp,
+        fontWeight = FontWeight.Bold,
+        fontFamily = FontFamily.Serif,
+    )
+}
+
+@Composable
+private fun SectionTitleRow(
+    title: String,
+    action: String,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier.fillMaxWidth().padding(horizontal = 26.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, Modifier.weight(1f), Ink, 23.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
+        Text(action, Modifier.clickable(onClick = onAction), Cyan, 14.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+private fun String.prettyTitle(): String = trim().replace(Regex("\\s+-\\s*$"), "")
+
+private fun String.heroTitle(): String {
+    var title = trim()
+    title = title.replace(Regex("""(?i)\s*\|\s*.+$"""), "")
+    title = title.replace(
+        Regex("""(?i)\s*[\(\[]\s*(official\s+)?(audio|music\s+video|mv|lyric[s]?(?:\s+video)?|visualizer)\s*[\)\]]"""),
+        "",
+    )
+    title = title.replace(Regex("""(?i)\s*[-–—]\s*(official|lyric).+$"""), "")
+    title = title.replace(Regex("""\s{2,}"""), " ").trim()
+    title = title.replace(Regex("""\s+[-–—]\s*$"""), "")
+    return title.ifBlank { trim() }.prettyTitle()
+}
+
+private fun YtItem.cardMeta(): String = subtitle?.prettyTitle()?.takeIf { it.isNotBlank() } ?: when (this) {
+    is PlaylistItem -> "Playlist"
+    is AlbumItem -> "Album"
+    is SongItem -> "Song"
+    else -> "Music"
 }
