@@ -15,6 +15,7 @@ data class SongItem(
     val artistId: String? = null,
     val albumId: String? = null,
     val playlistId: String? = null,
+    val videoType: String? = null,
 ) : YtItem()
 
 data class ArtistItem(

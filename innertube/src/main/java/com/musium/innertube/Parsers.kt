@@ -157,13 +157,18 @@ internal fun parseYoutubeVideos(root: JSONObject): List<SongItem> {
         if (key != "videoRenderer") return@walkObjects
         val videoId = obj.str("videoId") ?: return@walkObjects
         val title = obj.runsText("title") ?: return@walkObjects
+        val subtitle = obj.runsText("ownerText") ?: obj.runsText("shortBylineText") ?: obj.runsText("longBylineText")
+        val seconds = obj.clockSeconds()
+        if (MusicCatalog.isNonMusic(title, subtitle)) return@walkObjects
+        if (seconds != null && seconds > 15 * 60 && !MusicCatalog.looksOfficial(title, subtitle)) return@walkObjects
         songs.putIfAbsent(
             videoId,
             SongItem(
                 id = videoId,
                 title = title,
-                subtitle = obj.runsText("ownerText") ?: obj.runsText("shortBylineText") ?: obj.runsText("longBylineText"),
+                subtitle = subtitle,
                 thumbnail = obj.bestThumbnail(),
+                videoType = obj.musicVideoType(),
             ),
         )
     }
@@ -295,6 +300,7 @@ private fun parseListItem(obj: JSONObject): YtItem? {
             artistId = firstBrowseId(obj, "MUSIC_PAGE_TYPE_ARTIST"),
             albumId = firstBrowseId(obj, "MUSIC_PAGE_TYPE_ALBUM"),
             playlistId = obj.child("menu", "menuRenderer")?.firstPlaylistId(),
+            videoType = obj.musicVideoType(),
         )
     }
     return browseItem(obj, title, subtitle, thumbnail)
@@ -306,7 +312,7 @@ private fun parseCard(obj: JSONObject): YtItem? {
     val thumbnail = obj.bestThumbnail()
     val videoId = obj.firstVideoId()
     if (!videoId.isNullOrBlank()) {
-        return SongItem(id = videoId, title = title, subtitle = subtitle, thumbnail = thumbnail)
+        return SongItem(id = videoId, title = title, subtitle = subtitle, thumbnail = thumbnail, videoType = obj.musicVideoType())
     }
     return browseItem(obj, title, subtitle, thumbnail)
 }
@@ -318,10 +324,10 @@ private fun parseTwoRow(obj: JSONObject): YtItem? {
     val videoId = obj.firstVideoId()
     val pageType = obj.browseEndpoint()?.pageType()
     if (pageType == null && !videoId.isNullOrBlank()) {
-        return SongItem(id = videoId, title = title, subtitle = subtitle, thumbnail = thumbnail)
+        return SongItem(id = videoId, title = title, subtitle = subtitle, thumbnail = thumbnail, videoType = obj.musicVideoType())
     }
     return browseItem(obj, title, subtitle, thumbnail) ?: videoId?.let {
-        SongItem(id = it, title = title, subtitle = subtitle, thumbnail = thumbnail)
+        SongItem(id = it, title = title, subtitle = subtitle, thumbnail = thumbnail, videoType = obj.musicVideoType())
     }
 }
 
@@ -333,6 +339,7 @@ private fun parseSongFromPanel(obj: JSONObject): SongItem? {
         subtitle = obj.runsText("shortBylineText") ?: obj.runsText("longBylineText"),
         thumbnail = obj.bestThumbnail(),
         playlistId = obj.child("navigationEndpoint", "watchEndpoint")?.str("playlistId"),
+        videoType = obj.musicVideoType(),
     )
 }
 

@@ -78,7 +78,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     }
     LaunchedEffect(song.id) {
         lyricsOn = false
-        lyrics = runCatching { LyricsResolver.load(song) }.getOrNull()
+        lyrics = runCatching { LyricsResolver.load(song, player.duration) }.getOrNull()
     }
     val duration = player.duration.coerceAtLeast(1L)
     Column(Modifier.fillMaxSize().background(Black).padding(horizontal = 28.dp, vertical = 28.dp)) {

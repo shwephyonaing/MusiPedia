@@ -47,4 +47,45 @@ class LiveSearchTest {
         println("probe start=$startCode mid2mb=$midCode kind=${chosen!!.kind}")
         assertTrue("start range should work, was $startCode", startCode == 200 || startCode == 206)
     }
+
+    @Test
+    fun searchJapanVsBrazilIsNotAMatchReplay() {
+        val page = Innertube().search("japan vs brazil")
+        println("japan vs brazil songs=${page.songs.size}")
+        page.songs.take(8).forEach { println("SONG ${it.title} | ${it.subtitle}") }
+        assertTrue(page.songs.none { it.title.contains("highlight", ignoreCase = true) })
+        assertTrue(page.songs.none { it.title.contains("voice over", ignoreCase = true) })
+        assertTrue(page.songs.none { Regex("""(?i)japan.+(vs|v).+brazil""").containsMatchIn(it.title) && it.title.contains("goal", ignoreCase = true) })
+    }
+
+    @Test
+    fun searchOtherSongsStayMusic() {
+        val youtube = Innertube()
+        listOf("Hello", "Shape of You", "အမေ့အိမ်").forEach { query ->
+            val page = youtube.search(query)
+            println("$query songs=${page.songs.size}")
+            page.songs.take(3).forEach { println("  ${it.title} | ${it.subtitle}") }
+            assertTrue("$query should return songs", page.songs.isNotEmpty())
+            assertTrue(
+                "$query should not return lessons",
+                page.songs.none { it.title.contains("What is", ignoreCase = true) },
+            )
+        }
+    }
+
+    @Test
+    fun searchParagraphPrefersMusic() {
+        val youtube = Innertube()
+        val suggestions = youtube.searchSuggestions("Paragraph")
+        val page = youtube.search("Paragraph")
+        println("paragraph suggestions=$suggestions")
+        println("paragraph songs=${page.songs.size} artists=${page.artists.size} albums=${page.albums.size} playlists=${page.playlists.size}")
+        page.songs.take(8).forEach { song ->
+            println("SONG ${song.id} | ${song.title} | ${song.subtitle}")
+        }
+        page.artists.take(5).forEach { println("ARTIST ${it.title} | ${it.subtitle}") }
+        assertTrue(page.songs.isNotEmpty())
+        assertTrue(page.songs.none { it.title.contains("What is", ignoreCase = true) })
+        assertTrue(page.songs.any { it.subtitle.orEmpty().contains("Sheeran", ignoreCase = true) || it.title.contains("Paragraph", ignoreCase = true) })
+    }
 }

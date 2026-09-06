@@ -93,3 +93,23 @@ internal fun JSONObject.browseEndpoint(): JSONObject? {
 internal fun JSONObject.pageType(): String? =
     child("browseEndpointContextSupportedConfigs", "browseEndpointContextMusicConfig")?.str("pageType")
         ?: child("navigationEndpoint", "browseEndpoint")?.pageType()
+
+internal fun JSONObject.musicVideoType(): String? {
+    str("musicVideoType")?.let { return it }
+    child("watchEndpointMusicSupportedConfigs", "watchEndpointMusicConfig")?.str("musicVideoType")?.let { return it }
+    var found: String? = null
+    walkObjects { _, obj ->
+        if (found == null) found = obj.str("musicVideoType")
+    }
+    return found
+}
+
+internal fun JSONObject.clockSeconds(key: String = "lengthText"): Int? {
+    val text = runsText(key) ?: child(key)?.str("simpleText") ?: return null
+    val parts = text.split(':').mapNotNull { it.trim().toIntOrNull() }
+    return when (parts.size) {
+        2 -> parts[0] * 60 + parts[1]
+        3 -> parts[0] * 3600 + parts[1] * 60 + parts[2]
+        else -> null
+    }
+}

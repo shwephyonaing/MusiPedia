@@ -20,14 +20,23 @@ class Innertube(
         .build()
 
     fun search(query: String): SearchPage {
-        val music = runCatching { parseSearch(post("search", mapOf("query" to query))) }
-            .getOrDefault(SearchPage.Empty)
-        val filtered = runCatching { parseSearch(post("search", mapOf("query" to query, "params" to FILTER_SONG))) }
-            .getOrDefault(SearchPage.Empty)
-        var page = music.merge(filtered)
-        if (page.songs.isEmpty()) {
+        var page = searchMusic(query)
+        if (!MusicCatalog.hasMusicHits(page.songs, query) && !query.trim().endsWith("song", ignoreCase = true)) {
+            page = MusicCatalog.refine(page.merge(searchMusic("$query song")), query)
+        }
+        if (!MusicCatalog.hasMusicHits(page.songs, query)) {
+            val hint = searchSuggestions(query).firstOrNull { MusicCatalog.isMusicSearchHint(query, it) }
+            if (hint != null && !hint.equals(query, ignoreCase = true)) {
+                page = MusicCatalog.refine(page.merge(searchMusic(hint)), query)
+                if (!MusicCatalog.hasMusicHits(page.songs, query)) {
+                    val videos = runCatching { searchYoutubeVideos(hint) }.getOrDefault(emptyList())
+                    page = page.copy(songs = MusicCatalog.preferOfficial(page.songs + videos, query))
+                }
+            }
+        }
+        if (!MusicCatalog.hasMusicHits(page.songs, query) && MusicCatalog.allowYoutubeVideoFallback(query)) {
             val videos = runCatching { searchYoutubeVideos(query) }.getOrDefault(emptyList())
-            page = page.copy(songs = videos)
+            page = page.copy(songs = MusicCatalog.preferOfficial(page.songs + videos, query))
         }
         return page
     }
@@ -37,13 +46,14 @@ class Innertube(
         if (query.isEmpty()) return emptyList()
         val fromMusic = runCatching {
             parseSearchSuggestions(post("music/get_search_suggestions", mapOf("input" to query)))
-        }.getOrDefault(emptyList())
+        }.getOrDefault(emptyList()).filterNot(MusicCatalog::isNonMusicQuery)
         if (fromMusic.isNotEmpty()) return fromMusic
         val fromYoutube = runCatching {
             parseSearchSuggestions(post("get_search_suggestions", mapOf("input" to query)))
-        }.getOrDefault(emptyList())
+        }.getOrDefault(emptyList()).filterNot(MusicCatalog::isNonMusicQuery)
         if (fromYoutube.isNotEmpty()) return fromYoutube
         return runCatching { googleSuggest(query) }.getOrDefault(emptyList())
+            .filterNot(MusicCatalog::isNonMusicQuery)
     }
 
     fun home(): List<HomeSection> {
@@ -203,6 +213,16 @@ class Innertube(
         }
     }
 
+    private fun searchMusic(query: String): SearchPage {
+        val music = runCatching { parseSearch(post("search", mapOf("query" to query))) }
+            .getOrDefault(SearchPage.Empty)
+        val songs = runCatching { parseSearch(post("search", mapOf("query" to query, "params" to FILTER_SONG))) }
+            .getOrDefault(SearchPage.Empty)
+        val videos = runCatching { parseSearch(post("search", mapOf("query" to query, "params" to FILTER_VIDEO))) }
+            .getOrDefault(SearchPage.Empty)
+        return MusicCatalog.refine(songs.merge(music).merge(videos), query)
+    }
+
     private fun searchYoutubeVideos(query: String): List<SongItem> {
         val payload = JSONObject()
             .put(
@@ -344,6 +364,7 @@ class Innertube(
         private const val USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
         private const val FILTER_SONG = "EgWKAQIIAWoKEAkQBRAKEAMQBA%3D%3D"
+        private const val FILTER_VIDEO = "EgWKAQIQAWoKEAkQBRAKEAMQBA%3D%3D"
         private const val FILTER_WEB_VIDEO = "EgIQAQ%3D%3D"
         private const val WEB_VERSION = "2.20250317.01.00"
         private const val SAFARI_USER_AGENT =
