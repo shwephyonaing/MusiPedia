@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material3.Icon
@@ -28,7 +29,7 @@ private val SettingsText = Color(0xFF4D5651)
 @Composable
 internal fun SettingsScreen() {
     Column(
-        Modifier.fillMaxSize().background(Color.White).padding(horizontal = 24.dp),
+        Modifier.fillMaxSize().background(Color.White).safeDrawingPadding().padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         IconButton(onClick = {}, modifier = Modifier.padding(top = 38.dp)) {

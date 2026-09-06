@@ -10,15 +10,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.DownloadDone
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Lyrics
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.automirrored.outlined.QueueMusic
@@ -42,9 +45,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.musium.innertube.Lyrics
 import kotlinx.coroutines.delay
 
@@ -57,7 +63,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     val player = LocalPlayerConnection.current
     val song = player?.current
     if (player == null || song == null) {
-        Column(Modifier.fillMaxSize().background(Black).padding(28.dp)) {
+        Column(Modifier.fillMaxSize().background(Black).safeDrawingPadding().padding(28.dp)) {
             IconButton(onClick = onBack) { Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = Ink) }
             Text("Nothing is playing", color = Ink, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         }
@@ -80,9 +86,9 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
         lyrics = runCatching { LyricsResolver.load(song, player.duration) }.getOrNull()
     }
     val duration = player.duration.coerceAtLeast(1L)
-    Column(Modifier.fillMaxSize().background(Black).padding(horizontal = 28.dp, vertical = 28.dp)) {
+    Column(Modifier.fillMaxSize().background(Black).safeDrawingPadding().padding(horizontal = 24.dp, vertical = 24.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
+            IconButton(onClick = onBack, modifier = Modifier.background(Color(0xFFE1E5E2), CircleShape).size(38.dp)) {
                 Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = Ink, modifier = Modifier.size(32.dp))
             }
             if (player.sleepActive) {
@@ -108,27 +114,34 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                 position = time
             }
         } else {
-            Box(
-                Modifier.fillMaxWidth().height(286.dp).padding(top = 28.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    Modifier
-                        .size(268.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF0A1416)),
-                )
-                CdDisc(
-                    artworkUrl = song.thumbnailUrl,
-                    contentDescription = song.title,
-                    playing = player.playing,
-                    modifier = Modifier.size(248.dp),
-                    hole = 44.dp,
-                )
+            AsyncImage(
+                model = song.thumbnailUrl,
+                contentDescription = song.title,
+                modifier = Modifier.fillMaxWidth().height(326.dp).padding(top = 14.dp)
+                    .clip(RoundedCornerShape(2.dp)).background(Color(0xFFF0F1EF)),
+                contentScale = ContentScale.Crop,
+            )
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 18.dp), verticalAlignment = Alignment.Top) {
+            Text(
+                song.title,
+                Modifier.weight(1f),
+                color = Ink,
+                fontSize = 27.sp,
+                lineHeight = 28.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Serif,
+                maxLines = 2,
+            )
+            IconButton(onClick = { showQueue = true }) {
+                Icon(Icons.Outlined.MoreHoriz, "More", tint = Ink)
             }
         }
-        Text(song.title, Modifier.padding(top = 22.dp), color = Ink, fontSize = 28.sp, fontWeight = FontWeight.Bold, maxLines = 2)
-        Text(song.artist, Modifier.padding(top = 6.dp), color = Color(0xFF8C9690), fontSize = 14.sp, maxLines = 1)
+        Text("${formatTime(duration)}  ·  ${player.queue.size} Tracks", color = Color(0xFFA0A9A4), fontSize = 11.sp)
+        Row(Modifier.fillMaxWidth().padding(top = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Playing next", color = Color(0xFFB1B8B4), fontSize = 11.sp)
+            Text(song.artist, Modifier.padding(start = 18.dp), color = Ink, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        }
         player.lastError?.let { error ->
             Text(error, Modifier.padding(top = 8.dp), color = Color(0xFFFF8A80), fontSize = 12.sp, maxLines = 3)
         }
@@ -147,7 +160,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
             },
             valueRange = 0f..duration.toFloat(),
             colors = SliderDefaults.colors(thumbColor = Cyan, activeTrackColor = Cyan),
-            modifier = Modifier.padding(top = 24.dp),
+            modifier = Modifier.padding(top = 8.dp),
         )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(formatTime(position), color = Color(0xFF8C9690), fontSize = 12.sp)

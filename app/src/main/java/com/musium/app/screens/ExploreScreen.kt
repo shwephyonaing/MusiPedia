@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -24,6 +25,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -45,7 +47,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -53,6 +54,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,8 +64,9 @@ import com.musium.innertube.YtItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val Cyan = Color(0xFF00C2CB)
-private val Black = Color(0xFF0B0B0B)
+private val Cyan = Color(0xFF42E4CE)
+private val Black = Color.White
+private val SearchInk = Color(0xFF414944)
 
 private sealed interface SearchUi {
     data object Idle : SearchUi
@@ -75,7 +78,7 @@ private sealed interface SearchUi {
 private enum class SearchTab { Songs, Artists, Albums, Playlists }
 
 @Composable
-internal fun ExploreScreen() {
+internal fun ExploreScreen(onBack: () -> Unit = {}) {
     val player = LocalPlayerConnection.current
     val router = LocalMusicRouter.current
     val scope = rememberCoroutineScope()
@@ -129,20 +132,14 @@ internal fun ExploreScreen() {
         historyHits.none { it.equals(suggestion, ignoreCase = true) }
     }
 
-    Box(Modifier.fillMaxSize().background(Black)) {
-        Box(
-            Modifier.fillMaxWidth().height(220.dp).background(
-                Brush.verticalGradient(listOf(Color(0xFF09383B), Color.Transparent)),
-            ),
-        )
+    Box(Modifier.fillMaxSize().background(Black).safeDrawingPadding()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 54.dp, bottom = 170.dp),
+            contentPadding = PaddingValues(top = 72.dp, bottom = 100.dp),
         ) {
             item {
-                Row(Modifier.padding(start = 76.dp, end = 28.dp), verticalAlignment = Alignment.CenterVertically) {
-                    BrandMark(Modifier.height(28.dp).width(32.dp), Cyan)
-                    Text("Search", Modifier.padding(start = 12.dp), color = Cyan, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                Row(Modifier.padding(horizontal = 34.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Search", color = SearchInk, fontSize = 25.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
                 }
             }
             item {
@@ -151,11 +148,10 @@ internal fun ExploreScreen() {
                     onValueChange = { query = it },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 28.dp, vertical = 26.dp)
+                        .padding(horizontal = 34.dp, vertical = 14.dp)
                         .testTag("searchField")
                         .onFocusChanged { focused = it.isFocused },
-                    placeholder = { Text("Search") },
-                    leadingIcon = { Icon(Icons.Outlined.Search, null) },
+                    placeholder = { Text("Search for artists and moods", fontSize = 12.sp) },
                     trailingIcon = {
                         if (query.isNotEmpty()) {
                             IconButton(onClick = {
@@ -171,12 +167,13 @@ internal fun ExploreScreen() {
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { search() }),
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(28.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFFD9D9D9),
-                        unfocusedContainerColor = Color(0xFFD9D9D9),
+                        focusedContainerColor = Color(0xFFF1F1F1),
+                        unfocusedContainerColor = Color(0xFFF1F1F1),
                         focusedTextColor = Color.Black,
                         unfocusedTextColor = Color.Black,
+                        cursorColor = Cyan,
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent,
                     ),
@@ -204,7 +201,7 @@ internal fun ExploreScreen() {
                     is SearchUi.Results -> {
                         val page = current.page
                         if (page.isEmpty) {
-                            item { Text("No results", Modifier.padding(28.dp), color = Color.White, fontSize = 18.sp) }
+                            item { Text("No results", Modifier.padding(28.dp), color = SearchInk, fontSize = 18.sp) }
                         } else {
                             item {
                                 LazyRow(
@@ -219,8 +216,8 @@ internal fun ExploreScreen() {
                                             colors = FilterChipDefaults.filterChipColors(
                                                 selectedContainerColor = Cyan,
                                                 selectedLabelColor = Color.Black,
-                                                labelColor = Color.White,
-                                                containerColor = Color(0xFF172023),
+                                                labelColor = SearchInk,
+                                                containerColor = Color(0xFFF1F1F1),
                                             ),
                                         )
                                     }
@@ -233,7 +230,7 @@ internal fun ExploreScreen() {
                                 SearchTab.Playlists -> page.playlists
                             }
                             items(visible, key = { it::class.simpleName + it.id }) { item ->
-                                MusicItemRow(item, round = tab == SearchTab.Artists) {
+                                MusicItemRow(item, round = tab == SearchTab.Artists, light = true) {
                                     item.open(player, router, page.songs.map { it.toPlayable() })
                                 }
                             }
@@ -241,6 +238,13 @@ internal fun ExploreScreen() {
                     }
                 }
             }
+        }
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier.align(Alignment.TopStart).padding(start = 28.dp, top = 24.dp)
+                .size(38.dp).background(Color(0xFFE1E5E2), CircleShape),
+        ) {
+            Icon(Icons.Outlined.KeyboardArrowDown, "Back to Home", tint = Color(0xFF727A76))
         }
     }
 }
@@ -257,7 +261,7 @@ private fun SuggestRow(text: String, history: Boolean, onClick: () -> Unit, onRe
             tint = Color(0xFFB6B6B6),
             modifier = Modifier.size(22.dp),
         )
-        Text(text, Modifier.weight(1f).padding(horizontal = 14.dp, vertical = 10.dp), Color.White, 16.sp, maxLines = 1)
+        Text(text, Modifier.weight(1f).padding(horizontal = 14.dp, vertical = 10.dp), SearchInk, 16.sp, maxLines = 1)
         if (onRemove != null) {
             IconButton(onClick = onRemove) {
                 Icon(Icons.Outlined.Close, null, tint = Color(0xFFB6B6B6))
@@ -267,7 +271,7 @@ private fun SuggestRow(text: String, history: Boolean, onClick: () -> Unit, onRe
 }
 
 @Composable
-internal fun MusicItemRow(item: YtItem, round: Boolean = false, onClick: () -> Unit) {
+internal fun MusicItemRow(item: YtItem, round: Boolean = false, light: Boolean = false, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 28.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -280,9 +284,9 @@ internal fun MusicItemRow(item: YtItem, round: Boolean = false, onClick: () -> U
             contentScale = ContentScale.Crop,
         )
         Column(Modifier.weight(1f)) {
-            Text(item.title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 2)
+            Text(item.title, color = if (light) SearchInk else Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 2)
             Spacer(Modifier.height(4.dp))
-            Text(item.subtitle ?: item::class.simpleName.orEmpty().removeSuffix("Item"), color = Color(0xFFB6B6B6), fontSize = 13.sp, maxLines = 1)
+            Text(item.subtitle ?: item::class.simpleName.orEmpty().removeSuffix("Item"), color = if (light) Color(0xFF909994) else Color(0xFFB6B6B6), fontSize = 13.sp, maxLines = 1)
         }
     }
 }

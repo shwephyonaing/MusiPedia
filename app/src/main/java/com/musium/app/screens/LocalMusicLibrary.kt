@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -72,7 +73,7 @@ internal fun LocalMusicLibrary() {
     }
 
     LazyColumn(
-        Modifier.fillMaxSize().background(PlayerBlack),
+        Modifier.fillMaxSize().background(PlayerBlack).safeDrawingPadding(),
         contentPadding = PaddingValues(top = 54.dp, bottom = 170.dp),
     ) {
         item {
