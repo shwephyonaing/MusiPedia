@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 
-private val DialogCyan = Color(0xFF42E4CE)
 private val DialogInk: Color @Composable get() = MaterialTheme.colorScheme.onSurface
 
 @Composable

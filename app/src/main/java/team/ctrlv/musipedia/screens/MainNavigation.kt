@@ -50,9 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 
-private val PageBlack = Color(0xFF0B0B0B)
 private val Cyan = Color(0xFF42E4CE)
-private val Ink = Color(0xFF414944)
 
 @Composable
 fun MusiumHomeScreen() {

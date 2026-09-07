@@ -235,12 +235,6 @@ internal fun HomeContent() {
 private fun HomeUi.Ready.named(title: String): List<YtItem> =
     sections.firstOrNull { it.title.equals(title, ignoreCase = true) }?.items.orEmpty()
 
-private fun HomeSection.songs(): List<PlayableSong> =
-    items.filterIsInstance<SongItem>().map { it.toPlayable() }
-
-private fun List<YtItem>?.songs(): List<PlayableSong> =
-    orEmpty().filterIsInstance<SongItem>().map { it.toPlayable() }
-
 private fun PlayableSong.toFeaturedItem() = SongItem(
     id = id,
     title = title,
@@ -465,11 +459,6 @@ private fun PosterCard(
         )
         Text(subtitle, Modifier.padding(top = 2.dp), color = Mute, fontSize = 12.sp, maxLines = 1)
     }
-}
-
-@Composable
-internal fun Header() {
-    BrandLockup(Modifier.fillMaxWidth().padding(horizontal = 28.dp), textSize = 24.sp)
 }
 
 @Composable

@@ -91,11 +91,3 @@ fun SongItem.toPlayable(): PlayableSong = PlayableSong(
     artistId = artistId,
     albumId = albumId,
 )
-
-fun LocalSong.toPlayable(): PlayableSong = PlayableSong(
-    id = "local:$id",
-    title = title,
-    artist = artist,
-    thumbnailUrl = artworkUri?.toString(),
-    localUri = audioUri.toString(),
-)

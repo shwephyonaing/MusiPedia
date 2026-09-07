@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 
 private val DownloadAqua = Color(0xFF42E4CE)
-private val DownloadInk = Color(0xFF414944)
 
 @Composable
 internal fun DownloadsScreen(darkMode: Boolean = false, onBack: () -> Unit) {
