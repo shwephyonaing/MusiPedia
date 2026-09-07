@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.musium.app"
+    namespace = "team.ctrlv.musipedia"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.musium.app"
+        applicationId = "team.ctrlv.musipedia"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

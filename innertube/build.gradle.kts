@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.musium.innertube"
+    namespace = "team.ctrlv.musipedia.innertube"
     compileSdk = 35
     defaultConfig { minSdk = 24 }
     compileOptions {
