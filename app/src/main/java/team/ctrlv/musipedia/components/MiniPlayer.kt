@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,7 +35,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
 private val Cyan = Color(0xFF42E4CE)
-private val MiniInk = Color(0xFF414944)
+private val MiniInk: Color @Composable get() = MaterialTheme.colorScheme.onSurface
 
 @Composable
 internal fun MiniPlayer(onOpen: () -> Unit, modifier: Modifier = Modifier, protectBottom: Boolean = false) {
@@ -54,17 +55,17 @@ internal fun MiniPlayer(onOpen: () -> Unit, modifier: Modifier = Modifier, prote
     if (protectBottom) safeModifier = safeModifier.navigationBarsPadding()
     Column(
         safeModifier
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
             .clickable(onClick = onOpen),
     ) {
         LinearProgressIndicator(
             progress = { (position.toFloat() / duration).coerceIn(0f, 1f) },
             modifier = Modifier.fillMaxWidth().height(2.dp),
             color = Cyan,
-            trackColor = Color(0xFFE7EAE8),
+            trackColor = MaterialTheme.colorScheme.outlineVariant,
         )
         Row(
-            Modifier.fillMaxWidth().height(68.dp).padding(horizontal = 24.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 24.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CdDisc(

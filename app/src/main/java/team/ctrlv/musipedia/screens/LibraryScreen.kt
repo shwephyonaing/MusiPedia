@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,7 +46,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 
 private val FavoriteAqua = Color(0xFF42E4CE)
-private val FavoriteInk = Color(0xFF414944)
+private val FavoriteInk: Color @Composable get() = MaterialTheme.colorScheme.onBackground
 
 @Composable
 internal fun LibraryScreen(active: Boolean = true, onBack: () -> Unit = {}, onExplore: () -> Unit = {}) {
@@ -58,7 +59,7 @@ internal fun LibraryScreen(active: Boolean = true, onBack: () -> Unit = {}, onEx
         if (active) favorites = store?.songs().orEmpty()
     }
 
-    Box(Modifier.fillMaxSize().background(Color.White).safeDrawingPadding()) {
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding()) {
         if (favorites.isEmpty()) {
             Column(
                 Modifier.align(Alignment.Center).padding(horizontal = 36.dp),
@@ -93,7 +94,7 @@ internal fun LibraryScreen(active: Boolean = true, onBack: () -> Unit = {}, onEx
                         AsyncImage(
                             model = song.thumbnailUrl,
                             contentDescription = song.title,
-                            modifier = Modifier.size(58.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFF0F1EF)),
+                            modifier = Modifier.size(58.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
                             contentScale = ContentScale.Crop,
                         )
                         Column(Modifier.weight(1f)) {
@@ -113,9 +114,9 @@ internal fun LibraryScreen(active: Boolean = true, onBack: () -> Unit = {}, onEx
         IconButton(
             onClick = onBack,
             modifier = Modifier.align(Alignment.TopStart).padding(start = 28.dp, top = 24.dp)
-                .size(38.dp).background(Color(0xFFE1E5E2), CircleShape),
+                .size(38.dp).background(MaterialTheme.colorScheme.outlineVariant, CircleShape),
         ) {
-            Icon(Icons.Outlined.KeyboardArrowDown, "Back to Home", tint = Color(0xFF727A76))
+            Icon(Icons.Outlined.KeyboardArrowDown, "Back to Home", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

@@ -22,9 +22,9 @@ private val Cyan = Color(0xFF42E4CE)
 @Composable
 internal fun BottomNavigation(selected: Int, onSelected: (Int) -> Unit, modifier: Modifier = Modifier) {
     Row(
-        modifier.fillMaxWidth().height(62.dp).background(Color.White)
-            .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
+        modifier.fillMaxWidth().height(60.dp).background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         NavItem("Search", Icons.Outlined.Search, selected == 1) { onSelected(1) }
@@ -35,12 +35,12 @@ internal fun BottomNavigation(selected: Int, onSelected: (Int) -> Unit, modifier
 
 @Composable
 internal fun NavItem(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: Boolean, onClick: () -> Unit) {
-    val color = if (selected) Cyan else Color(0xFF6F7672)
+    val color = if (selected) Cyan else MaterialTheme.colorScheme.onSurfaceVariant
     Column(
         Modifier.fillMaxHeight().width(72.dp).clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(icon, label, tint = color, modifier = Modifier.size(28.dp))
+        Icon(icon, label, tint = color, modifier = Modifier.size(24.dp))
     }
 }

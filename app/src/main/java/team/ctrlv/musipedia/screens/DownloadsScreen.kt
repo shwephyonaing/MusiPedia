@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,11 +52,11 @@ internal fun DownloadsScreen(darkMode: Boolean = false, onBack: () -> Unit) {
     val player = LocalPlayerConnection.current
     val downloads = (OfflineDownloads.songs + OfflineDownloads.inFlight.values).distinctBy { it.id }
     var pendingDelete by remember { mutableStateOf<PlayableSong?>(null) }
-    val surface = if (darkMode) Color(0xFF121413) else Color.White
-    val textColor = if (darkMode) Color(0xFFF2F4F3) else DownloadInk
-    val mutedColor = if (darkMode) Color(0xFF8E9993) else Color(0xFF909994)
-    val tileColor = if (darkMode) Color(0xFF292D2B) else Color(0xFFF0F1EF)
-    val backColor = if (darkMode) Color(0xFF303532) else Color(0xFFE1E5E2)
+    val surface = MaterialTheme.colorScheme.background
+    val textColor = MaterialTheme.colorScheme.onBackground
+    val mutedColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val tileColor = MaterialTheme.colorScheme.surfaceVariant
+    val backColor = MaterialTheme.colorScheme.outlineVariant
 
     Box(Modifier.fillMaxSize().background(surface).safeDrawingPadding()) {
         if (downloads.isEmpty()) {
@@ -139,7 +140,7 @@ internal fun DownloadsScreen(darkMode: Boolean = false, onBack: () -> Unit) {
             modifier = Modifier.align(Alignment.TopStart).padding(start = 28.dp, top = 24.dp)
                 .size(38.dp).background(backColor, CircleShape),
         ) {
-            Icon(Icons.Outlined.KeyboardArrowDown, "Back to Settings", tint = if (darkMode) Color.White else Color(0xFF727A76))
+            Icon(Icons.Outlined.KeyboardArrowDown, "Back to Settings", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         pendingDelete?.let { song ->
             DeleteDownloadConfirmDialog(

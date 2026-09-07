@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -117,8 +118,9 @@ fun MusiumHomeScreen() {
 
     BackHandler(enabled = fullPlayer || showDownloads || destination != null || selectedTab != 0) { goBack() }
 
+    MusiumTheme(darkMode = darkMode) {
     CompositionLocalProvider(LocalMusicRouter provides router) {
-        Box(Modifier.fillMaxSize().background(PageBlack)) {
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             if (selectedTab in 0..3 && showTabs) HomeContent()
             KeepAlive(visible = selectedTab == 1 && showTabs, animateFromBottom = true) {
                 Box(Modifier.fillMaxSize()) {
@@ -215,6 +217,7 @@ fun MusiumHomeScreen() {
             }
         }
     }
+    }
 }
 
 @Composable
@@ -226,7 +229,7 @@ private fun OfflineConnectionDialog(
         Column(
             Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFFAFAF8), RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(20.dp))
                 .padding(horizontal = 22.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -246,7 +249,7 @@ private fun OfflineConnectionDialog(
             Spacer(Modifier.height(16.dp))
             Text(
                 "No internet connection",
-                color = Ink,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Serif,
@@ -255,7 +258,7 @@ private fun OfflineConnectionDialog(
             Spacer(Modifier.height(10.dp))
             Text(
                 "Enjoy listening to your downloaded songs.",
-                color = Color(0xFF7A8480),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
                 textAlign = TextAlign.Center,
@@ -272,7 +275,7 @@ private fun OfflineConnectionDialog(
                 Text("Go to Downloads", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             }
             TextButton(onClick = onDismiss) {
-                Text("Not now", color = Color(0xFF8B9490), fontWeight = FontWeight.SemiBold)
+                Text("Not now", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
             }
         }
     }

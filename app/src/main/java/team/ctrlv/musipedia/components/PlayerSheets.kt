@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -54,8 +55,8 @@ import coil.compose.AsyncImage
 import team.ctrlv.musipedia.innertube.Lyrics
 
 private val Cyan = Color(0xFF42E4CE)
-private val Sheet = Color.White
-private val SheetInk = Color(0xFF414944)
+private val Sheet: Color @Composable get() = MaterialTheme.colorScheme.surface
+private val SheetInk: Color @Composable get() = MaterialTheme.colorScheme.onSurface
 private val Scrim = Color.Black.copy(alpha = 0.45f)
 
 @Composable
@@ -205,7 +206,7 @@ internal fun QueueSheet(player: PlayerConnection, onDismiss: () -> Unit) {
                             translationY = if (dragging) dragOffsetY else 0f
                             shadowElevation = if (dragging) 10f else 0f
                         }
-                        .background(if (current) Color(0xFFE8FBF8) else Color.Transparent)
+                        .background(if (current) Cyan.copy(alpha = 0.12f) else Color.Transparent)
                         .padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

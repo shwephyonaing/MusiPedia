@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -55,10 +56,10 @@ import team.ctrlv.musipedia.innertube.hdArtwork
 import team.ctrlv.musipedia.innertube.youtubeThumb
 
 private val Cyan = Color(0xFF42E4CE)
-private val Page = Color(0xFFFAFAF8)
-private val Tile = Color(0xFFF0F0EC)
-private val Ink = Color(0xFF3F4944)
-private val Mute = Color(0xFFA3ACA7)
+private val Page: Color @Composable get() = MaterialTheme.colorScheme.background
+private val Tile: Color @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val Ink: Color @Composable get() = MaterialTheme.colorScheme.onBackground
+private val Mute: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
 private sealed interface HomeUi {
     data object Loading : HomeUi

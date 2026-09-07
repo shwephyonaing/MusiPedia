@@ -25,6 +25,8 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
         private set
     var currentIndex by mutableIntStateOf(0)
         private set
+    var repeatOne by mutableStateOf(service.player.repeatMode == Player.REPEAT_MODE_ONE)
+        private set
     var sleepEndsAt by mutableLongStateOf(0L)
         private set
     var sleepEndOfTrack by mutableStateOf(false)
@@ -88,6 +90,15 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
         runCatching {
             if (service.player.isPlaying) service.player.pause() else service.player.play()
         }
+    }
+
+    fun toggleRepeatOne() {
+        service.player.repeatMode = if (repeatOne) {
+            Player.REPEAT_MODE_OFF
+        } else {
+            Player.REPEAT_MODE_ONE
+        }
+        repeatOne = service.player.repeatMode == Player.REPEAT_MODE_ONE
     }
 
     fun seekTo(positionMs: Long) {
@@ -156,6 +167,10 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
         refresh()
     }
 
+    override fun onRepeatModeChanged(repeatMode: Int) {
+        repeatOne = repeatMode == Player.REPEAT_MODE_ONE
+    }
+
     override fun onPlayerError(error: PlaybackException) {
         lastError = "${error.errorCodeName}: ${error.message ?: PlayLog.chain(error)}"
         PlayLog.e("ui lastError=$lastError", error)
@@ -169,6 +184,7 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
             duration = service.player.duration.coerceAtLeast(0L)
             queue = service.queue()
             currentIndex = service.currentIndex()
+            repeatOne = service.player.repeatMode == Player.REPEAT_MODE_ONE
         }
     }
 

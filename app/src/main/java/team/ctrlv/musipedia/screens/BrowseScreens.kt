@@ -26,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -53,9 +54,9 @@ import team.ctrlv.musipedia.innertube.hdArtwork
 import team.ctrlv.musipedia.innertube.hdProfileArtwork
 
 private val Cyan = Color(0xFF42E4CE)
-private val PageBackground = Color(0xFFFAFAF8)
-private val PageInk = Color(0xFF414944)
-private val MutedInk = Color(0xFF909994)
+private val PageBackground: Color @Composable get() = MaterialTheme.colorScheme.background
+private val PageInk: Color @Composable get() = MaterialTheme.colorScheme.onBackground
+private val MutedInk: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
 private sealed interface BrowseUi {
     data object Loading : BrowseUi
@@ -120,9 +121,9 @@ private fun BrowseScaffold(
             is BrowseUi.Error -> Column(Modifier.padding(28.dp)) {
                 IconButton(
                     onClick = onBack,
-                    modifier = Modifier.background(Color(0xFFE1E5E2), CircleShape),
+                    modifier = Modifier.background(MaterialTheme.colorScheme.outlineVariant, CircleShape),
                 ) {
-                    Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = Color(0xFF727A76))
+                    Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text(
                     titleHint,
@@ -173,9 +174,9 @@ private fun BrowseScaffold(
                         Row(Modifier.padding(20.dp, 20.dp, 20.dp, 0.dp), verticalAlignment = Alignment.CenterVertically) {
                             IconButton(
                                 onClick = onBack,
-                                modifier = Modifier.background(Color(0xFFE1E5E2), CircleShape),
+                                modifier = Modifier.background(MaterialTheme.colorScheme.outlineVariant, CircleShape),
                             ) {
-                                Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = Color(0xFF727A76))
+                                Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -190,7 +191,7 @@ private fun BrowseScaffold(
                                 modifier = Modifier
                                     .size(if (roundArtwork) 248.dp else 210.dp)
                                     .clip(if (roundArtwork) CircleShape else RoundedCornerShape(10.dp))
-                                    .background(Color(0xFFF0F1EF)),
+                                    .background(MaterialTheme.colorScheme.surfaceVariant),
                                 contentScale = ContentScale.Crop,
                                 alignment = Alignment.Center,
                             )

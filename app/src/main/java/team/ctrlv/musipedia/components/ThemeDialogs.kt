@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,7 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 
 private val DialogCyan = Color(0xFF42E4CE)
-private val DialogInk = Color(0xFF414944)
+private val DialogInk: Color @Composable get() = MaterialTheme.colorScheme.onSurface
 
 @Composable
 internal fun ThemedConfirmDialog(
@@ -45,16 +47,17 @@ internal fun ThemedConfirmDialog(
     Dialog(onDismissRequest = onDismiss) {
         Column(
             Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFFAFAF8), RoundedCornerShape(20.dp))
-                .padding(horizontal = 22.dp, vertical = 24.dp),
+                .width(280.dp)
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
+                .padding(horizontal = 18.dp, vertical = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
                 Modifier
-                    .size(64.dp)
+                    .size(46.dp)
                     .background(
-                        if (confirmDestructive) Color(0xFFFFE8E6) else DialogCyan.copy(alpha = 0.16f),
+                        if (confirmDestructive) MaterialTheme.colorScheme.errorContainer
+                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
                         CircleShape,
                     ),
                 contentAlignment = Alignment.Center,
@@ -62,41 +65,49 @@ internal fun ThemedConfirmDialog(
                 Icon(
                     icon,
                     contentDescription = null,
-                    tint = if (confirmDestructive) Color(0xFFE05B52) else DialogCyan,
-                    modifier = Modifier.size(30.dp),
+                    tint = if (confirmDestructive) MaterialTheme.colorScheme.onErrorContainer
+                    else MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(23.dp),
                 )
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
             Text(
                 title,
                 color = DialogInk,
-                fontSize = 22.sp,
+                fontSize = 19.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Serif,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(7.dp))
             Text(
                 message,
-                color = Color(0xFF7A8480),
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                lineHeight = 17.sp,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(16.dp))
             Button(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (confirmDestructive) Color(0xFFE05B52) else DialogCyan,
-                    contentColor = Color.White,
+                    containerColor = if (confirmDestructive) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.primary,
+                    contentColor = if (confirmDestructive) MaterialTheme.colorScheme.onError
+                    else MaterialTheme.colorScheme.onPrimary,
                 ),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().height(42.dp),
             ) {
-                Text(confirmLabel, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text(confirmLabel, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             }
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color(0xFF8B9490), fontWeight = FontWeight.SemiBold)
+            TextButton(onClick = onDismiss, modifier = Modifier.height(38.dp)) {
+                Text(
+                    "Cancel",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp,
+                )
             }
         }
     }

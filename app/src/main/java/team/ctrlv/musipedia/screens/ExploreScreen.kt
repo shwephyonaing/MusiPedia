@@ -39,6 +39,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -74,8 +75,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private val Cyan = Color(0xFF42E4CE)
-private val Black = Color.White
-private val SearchInk = Color(0xFF414944)
+private val Black: Color @Composable get() = MaterialTheme.colorScheme.background
+private val SearchInk: Color @Composable get() = MaterialTheme.colorScheme.onBackground
 
 private sealed interface SearchUi {
     data object Idle : SearchUi
@@ -178,8 +179,8 @@ internal fun ExploreScreen(onBack: () -> Unit = {}) {
                     keyboardActions = KeyboardActions(onSearch = { search() }),
                     shape = RoundedCornerShape(28.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFFF1F1F1),
-                        unfocusedContainerColor = Color(0xFFF1F1F1),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         focusedTextColor = Color.Black,
                         unfocusedTextColor = Color.Black,
                         cursorColor = Cyan,
@@ -230,7 +231,7 @@ internal fun ExploreScreen(onBack: () -> Unit = {}) {
                                                 selectedContainerColor = Cyan,
                                                 selectedLabelColor = Color.Black,
                                                 labelColor = SearchInk,
-                                                containerColor = Color(0xFFF1F1F1),
+                                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                             ),
                                         )
                                     }
@@ -269,9 +270,9 @@ internal fun ExploreScreen(onBack: () -> Unit = {}) {
         IconButton(
             onClick = onBack,
             modifier = Modifier.align(Alignment.TopStart).padding(start = 28.dp, top = 24.dp)
-                .size(38.dp).background(Color(0xFFE1E5E2), CircleShape),
+                .size(38.dp).background(MaterialTheme.colorScheme.outlineVariant, CircleShape),
         ) {
-            Icon(Icons.Outlined.KeyboardArrowDown, "Back to Home", tint = Color(0xFF727A76))
+            Icon(Icons.Outlined.KeyboardArrowDown, "Back to Home", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -343,7 +344,7 @@ private fun SearchSongMenu(song: PlayableSong, player: PlayerConnection?) {
             onDismissRequest = { open = false },
             modifier = Modifier.width(200.dp),
             offset = DpOffset(x = (-120).dp, y = 0.dp),
-            containerColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(10.dp),
             tonalElevation = 0.dp,
             shadowElevation = 7.dp,
