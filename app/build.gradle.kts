@@ -1,7 +1,16 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+}
+
+val releasePropertiesFile = rootProject.file("keystore.properties")
+val releaseProperties = Properties().apply {
+    if (releasePropertiesFile.exists()) {
+        releasePropertiesFile.inputStream().use(::load)
+    }
 }
 
 android {
@@ -13,12 +22,35 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildFeatures {
         compose = true
+    }
+
+    signingConfigs {
+        if (releasePropertiesFile.exists()) {
+            create("release") {
+                storeFile = rootProject.file(releaseProperties.getProperty("storeFile"))
+                storePassword = releaseProperties.getProperty("storePassword")
+                keyAlias = releaseProperties.getProperty("keyAlias")
+                keyPassword = releaseProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            if (releasePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+            // Keep the first production build unminified. NewPipe's Rhino dependency
+            // references desktop-only APIs that make R8 fragile on Windows.
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
     }
 
     compileOptions {

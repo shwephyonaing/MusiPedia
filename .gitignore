@@ -15,6 +15,9 @@ local.properties
 # Signing credentials
 *.jks
 *.keystore
+keystore.properties
+release-signing/
+release-artifacts/
 
 # OS files
 .DS_Store
