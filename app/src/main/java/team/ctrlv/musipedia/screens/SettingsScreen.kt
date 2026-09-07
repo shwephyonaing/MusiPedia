@@ -69,7 +69,6 @@ internal fun SettingsScreen(
             Icon(Icons.Outlined.KeyboardArrowDown, "Settings", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         SettingsOption("Downloads", "Songs available offline", textColor, mutedColor, onDownloads)
-        SettingsOption("Account & Privacy", "Manage your account", textColor, mutedColor)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Dark Mode", color = textColor, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
@@ -85,7 +84,7 @@ internal fun SettingsScreen(
             )
         }
         SettingsOption("About", "About MusiPedia", textColor, mutedColor) { showAbout = true }
-        SettingsOption("Feedback", "Email the Ctrl V team", textColor, mutedColor) {
+        SettingsOption("Feedback", "To report a bug or request a feature", textColor, mutedColor) {
             val email = Intent(
                 Intent.ACTION_SENDTO,
                 Uri.parse("mailto:team.ctrl.v@gmail.com?subject=MusiPedia%20Feedback"),
