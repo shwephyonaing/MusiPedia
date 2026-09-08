@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -394,6 +395,7 @@ private fun FavArtistProfilesRow(
     onArtist: (TasteArtist) -> Unit,
     onMoreArtists: () -> Unit,
 ) {
+    val catalog = (LocalContext.current.applicationContext as? MusiumApplication)?.tasteCatalogStore
     LazyRow(
         contentPadding = PaddingValues(horizontal = 26.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -402,6 +404,7 @@ private fun FavArtistProfilesRow(
             FavArtistProfileCell(
                 name = artist.name,
                 imageUrl = artist.thumbnailUrl,
+                verified = catalog?.isVerified(artist.id) == true,
                 onClick = { onArtist(artist) },
             )
         }
@@ -447,6 +450,7 @@ private fun FavArtistProfilesRow(
 private fun FavArtistProfileCell(
     name: String,
     imageUrl: String?,
+    verified: Boolean,
     onClick: () -> Unit,
 ) {
     val art = rememberArtworkRequest(imageUrl, ArtworkSizes.Profile)
@@ -480,17 +484,31 @@ private fun FavArtistProfileCell(
                 )
             }
         }
-        Text(
-            name,
+        Row(
             Modifier.padding(top = 8.dp),
-            color = Ink,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            lineHeight = 15.sp,
-        )
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                name,
+                color = Ink,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                lineHeight = 15.sp,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            if (verified) {
+                Icon(
+                    Icons.Outlined.Verified,
+                    contentDescription = "Verified artist",
+                    tint = Color(0xFF1D9BF0),
+                    modifier = Modifier.padding(start = 2.dp).size(12.dp),
+                )
+            }
+        }
     }
 }
 

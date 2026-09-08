@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -45,6 +46,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -56,6 +59,7 @@ import team.ctrlv.musipedia.innertube.hdArtwork
 import team.ctrlv.musipedia.innertube.hdProfileArtwork
 
 private val Cyan = Color(0xFF42E4CE)
+private val VerifiedBlue = Color(0xFF1D9BF0)
 private val PageBackground: Color @Composable get() = MaterialTheme.colorScheme.background
 private val PageInk: Color @Composable get() = MaterialTheme.colorScheme.onBackground
 private val MutedInk: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
@@ -198,14 +202,46 @@ private fun BrowseScaffold(
                                 contentScale = ContentScale.Crop,
                                 alignment = Alignment.Center,
                             )
-                            Text(
-                                page.title,
-                                Modifier.padding(top = 16.dp),
-                                color = PageInk,
-                                fontSize = 27.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Serif,
-                            )
+                            if (roundArtwork) {
+                                val catalog = (context.applicationContext as? MusiumApplication)?.tasteCatalogStore
+                                val verified = catalog?.isVerified(pageId) == true
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
+                                ) {
+                                    Text(
+                                        page.title,
+                                        color = PageInk,
+                                        fontSize = 27.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Serif,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false),
+                                    )
+                                    if (verified) {
+                                        Icon(
+                                            Icons.Outlined.Verified,
+                                            contentDescription = "Verified artist",
+                                            tint = VerifiedBlue,
+                                            modifier = Modifier.padding(start = 8.dp).size(22.dp),
+                                        )
+                                    }
+                                }
+                            } else {
+                                Text(
+                                    page.title,
+                                    Modifier.padding(top = 16.dp),
+                                    color = PageInk,
+                                    fontSize = 27.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Serif,
+                                )
+                            }
                             page.subtitle?.let { Text(it, Modifier.padding(top = 6.dp), color = MutedInk, fontSize = 14.sp) }
                             Row(
                                 Modifier.padding(top = 16.dp),

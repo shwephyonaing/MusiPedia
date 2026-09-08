@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-08",
+  "updatedAt": "2026-09-09",
   "artists": [
     {
       "id": "UC89DR_JHR47nnL09fR9qQ4g",
@@ -278,6 +278,97 @@
       "region": "mm"
     },
     {
+      "id": "UCAyG0IDa5vqPxi63UvyK8Bw",
+      "name": "Eint Chit",
+      "handle": "@eintchit.official",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/Fpwm6oElY0gFffLpJSqWs96jX7iNGqUG53bxJDK8sCLtXSAt8zJWhocCZfhXeal1xxyJZK4GiA=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCDpsPuFlH7IhR2061KXCY3w",
+      "name": "Stone Cold Sober.",
+      "handle": "@StoneColdSober.bandmm",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/2iKTfwCmWmfTMJ_jBW-KSatAE5o89zJIc5aySgSORNJlsfkhzktGp2e4HwvkKU1ibjY6YrqCtD8=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCzJ_ZzJwvvLRrzGh32BA9Kg",
+      "name": "Maung Swan",
+      "handle": "@MaungSwann",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/njmPzF1wh_jndl-7J5InkO0DuuJwAWu8ZHrJAhzNV8_JNu2tzK98P6F1jqm9PAR13S81kgFutQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCNk-4zcnQ0OZhvPTFcGTtUw",
+      "name": "MAY",
+      "handle": "@MAYofficialchannel",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/xTTNuxyho_VXtqiUY07XWMlB63Irt4w3Emdoq7mLDZkZlfkSGS5EqvRVRMn02-GfNxGb9PyfJQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCqvUyncSB7nbikKiA5Gasqg",
+      "name": "Aung La",
+      "handle": "@aunglareason",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/xNA3Lm9ShImVLd5ZbYxf84WDA-f6AB7WxxCgkaGrHueWv1O_OJ_0aV-0gTgBUlbRNc8uUNgckw=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCgCM2nL7NyBlHuMPXpQXN9A",
+      "name": "Wai La",
+      "handle": "@wailaofficial",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/JwNdaZpRy3UqgbQU4h54fir33y3fvrDMAMR66PvqcFEMWVMeV9FkwgkYr8beMDzEFTrNXGNF_g=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCY27TbDPX29x_svRtlGEIqg",
+      "name": "Cherry Thin",
+      "handle": "@CherryThin",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/eWoS_rSplNbW1BcWxg6ZmfN4bdWyf3k0Zh2ckc8cEkLAptKIgubkuRettbJiDhLSNCKWZeDarg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCB9xyEBASllZm3ZNubs3tTg",
+      "name": "Po Po",
+      "handle": "@PoPoOfficial",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/pjJ2Ys8YoGVzyH3-IWDcb0CcvontCR53ScNlopvu0EpWLVf2QqqHAjPFJQapm66zBgMTOV3I=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCiRnaCl02Ml0E5tUdspK9Aw",
+      "name": "May La Thanzin",
+      "handle": "@MayLaThanzinOfficial",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/60KdJDDGEaQ6ChPdQWY3adFf591aYk8qR_fkqhPS0SJ4YkZUVi6dIYz3lwuNiBZxav457ZXSxQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCGDEI49xsGhvs7DQYzhbYuA",
+      "name": "Kriz",
+      "handle": "@KrizOfficialChannel",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/wPHWHOJ1BR0cB_juM8IltR0qoS3PrWr3lUHx_rORJala97czKBpKN0yq_4RLZqR-5bpJP_J7xns=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCboLPMWDHL_p1795xiso-Eg",
+      "name": "Adam Oo",
+      "handle": "@AdamOo.Official",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/5cqIReYF_RIbL19LkZMamuNYwp6cL6bjd-I4mk1TGc1GH5yvjcpKfDdoWn4Q5O1Nc9dLXgTMTg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCkj7a5iZ7kAMkuoChtu5-mQ",
+      "name": "Project K",
+      "handle": "@projectk_official",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/joJclVu-QeCq43D25iBJH6s6w60jP9g3QrK6GB8hGzjPjdCgSZWyhexVwao_VI2jdvw5m2gAmw=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCkxQ4SsnziKFk1IIaIGitFQ",
+      "name": "YOLO",
+      "handle": "@YOLOMusicians",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/VhJCwB0B4Legc9bik74wvhp-2lHGWxyiDp_c4is0NXyKhRciDbHXgT7GvwsuTLCrLLDVXignJg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
       "id": "UCVdhQXJQPDDVRi6TAua9TOA",
       "name": "Zenith",
       "handle": "@zenithlovesdaisyofficial",
@@ -390,6 +481,62 @@
       "id": "UCqECaJ8Gagnn7YCbPEzWH6g",
       "name": "Taylor Swift",
       "thumbnailUrl": "https://yt3.googleusercontent.com/jzrwZgK5o0Ng2GT7oA7Na-hay4abtEl13lByjSQm6FW-K-dBu_ruvVk6vVF2vM6igC2GTRLO=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCWcrr8Q9INGNp-PTCLTzc8Q",
+      "name": "Troye Sivan",
+      "handle": "@troyesivan",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/4NVzks3n48wrYGwbChyFYSsJZj2qAnVXEsEbJWBERNw1q6vPEVvz06ZmEfraaE6g0FYfj6SV=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCb2HGwORFBo94DmRx4oLzow",
+      "name": "One Direction",
+      "handle": "@onedirectionchannel",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_lBZumWLg8HqCIAD4oHGTIIdD8DTz5eV_DgCXFu6KxNjj28=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCBIzPk0lne1w22jZR3LA36g",
+      "name": "Jonas Blue",
+      "handle": "@jonasblueofficial",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/Dw7K0HjmNop_-X9JRrU-DGn-eJG6VwBS2NpfTO4GP-V-axb6ict0hCRHs4DKl34f2alQP0Bm-Q=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UC_LfW1R3B0of9qOw1uI-QNQ",
+      "name": "The 1975",
+      "handle": "@the1975",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/BCXXwF_qrPJvCzNhUzD18Afc2xAZT5alxhvnyg0pvO8JY1xyd3FdGL31quPbWGMt37TrjKTosw=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCqGZT_HFxh8kJibPrXXNPpw",
+      "name": "ABOUT",
+      "handle": "@ABOUT_1202",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/yF9GZbuAzRU9dyCkBai9JnI8zk4-03DKxl3RZArxSND0KzXeLVXOJNhn00Ob6p3qA1CGMM3A2Bo=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCjqZeIIXmNj3WS7auJjJFpg",
+      "name": "welovekamikaze",
+      "handle": "@kamikaze_music",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/VkKNyYNHzT9baRx_3KP6I2N7hSHVNLPSrsjtwllZHs-MrwIYHcV0iYflZPmmiNDPPBx2CAIpiA=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCq3Ci-h945sbEYXpVlw7rJg",
+      "name": "The Chainsmokers",
+      "handle": "@THECHAINSMOKERS",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/42p-AOFHfIuZq8klay6fPQdF9Z_yo6ddFbuCgY8_Iq6Y1F7sjk4cJXnRQHWLLWCgi-ImLlNa=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCPNxhDvTcytIdvwXWAm43cA",
+      "name": "Selena Gomez",
+      "handle": "@selenagomez",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/SdHhEkdZ78QM2SNYjgSRnJX_F-ulIdb-B001bxuTfzLX7rbfuEeO_GXaynLc2zp-LZQizNEB=s900-c-k-c0x00ffffff-no-rj",
       "region": "intl"
     },
     {
