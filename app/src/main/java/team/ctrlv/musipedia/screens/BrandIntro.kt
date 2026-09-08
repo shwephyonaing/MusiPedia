@@ -1,13 +1,16 @@
 package team.ctrlv.musipedia
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -15,11 +18,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -31,10 +36,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,7 +51,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 
-private val SplashAqua = Color(0xFF42E4CE)
+private val SplashDeep = Color(0xFF2BB8B8)
+private val SplashMid = Color(0xFF42E4CE)
+private val SplashLight = Color(0xFF7AEFE0)
+private val SplashFog = Color(0x66FFFFFF)
 
 private sealed interface SplashState {
     data object Loading : SplashState
@@ -58,31 +69,48 @@ internal fun BrandIntro(onDone: () -> Unit) {
     }
     var state by remember { mutableStateOf<SplashState>(SplashState.Loading) }
     var request by remember { mutableIntStateOf(0) }
-    val animation = rememberInfiniteTransition(label = "splashLogo")
-    val logoScale by animation.animateFloat(
-        initialValue = 0.94f,
-        targetValue = 1.04f,
+    var showTagline by remember { mutableStateOf(false) }
+
+    val breath = rememberInfiniteTransition(label = "splashBreath")
+    val breathScale by breath.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.012f,
         animationSpec = infiniteRepeatable(
-            animation = tween(900, easing = FastOutSlowInEasing),
+            animation = tween(2200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
         ),
-        label = "splashLogoScale",
+        label = "splashBreathScale",
     )
-    val logoAlpha by animation.animateFloat(
-        initialValue = 0.72f,
+    val shimmer by breath.animateFloat(
+        initialValue = 0.15f,
+        targetValue = 0.34f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "splashShimmer",
+    )
+    val barSweep by breath.animateFloat(
+        initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(900, easing = FastOutSlowInEasing),
+            animation = tween(1100, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
         ),
-        label = "splashLogoAlpha",
+        label = "splashBarSweep",
     )
+
+    LaunchedEffect(Unit) {
+        // After Musi lands + Pedia finishes sliding out (~420+640+760).
+        delay(1950)
+        showTagline = true
+    }
 
     LaunchedEffect(request) {
         state = SplashState.Loading
         val result = runCatching {
             coroutineScope {
-                val minimumSplash = async { delay(900) }
+                val minimumSplash = async { delay(2350) }
                 val home = async {
                     MusicRepository.home(recentStore?.songs().orEmpty().take(5), force = false)
                 }
@@ -103,76 +131,141 @@ internal fun BrandIntro(onDone: () -> Unit) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF65D7D8), SplashAqua))),
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(SplashLight, SplashMid, SplashDeep),
+                ),
+            ),
     ) {
+        // Soft light bloom behind the mark — atmosphere without clutter.
+        Box(
+            Modifier
+                .align(Alignment.Center)
+                .size(320.dp)
+                .graphicsLayer { alpha = shimmer }
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(Color.White.copy(alpha = 0.55f), Color.Transparent),
+                        center = Offset.Unspecified,
+                        radius = 480f,
+                    ),
+                    CircleShape,
+                ),
+        )
+        Box(
+            Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 48.dp, end = 12.dp)
+                .size(180.dp)
+                .graphicsLayer { alpha = 0.22f }
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(Color.White.copy(alpha = 0.5f), Color.Transparent),
+                    ),
+                    CircleShape,
+                ),
+        )
+
         Column(
-            Modifier.fillMaxSize().padding(horizontal = 34.dp, vertical = 54.dp),
+            Modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .padding(horizontal = 36.dp, vertical = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
         ) {
             Spacer(Modifier.weight(1f))
-            BrandLockup(
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.graphicsLayer {
-                    scaleX = logoScale
-                    scaleY = logoScale
-                    alpha = logoAlpha
+                    scaleX = breathScale
+                    scaleY = breathScale
                 },
-                markColor = Color.White,
-                textColor = Color.White,
-                textSize = 42.sp,
-            )
-            Text(
-                "Discover music you love",
-                modifier = Modifier.padding(top = 18.dp),
-                color = Color.White.copy(alpha = 0.9f),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-            )
+            ) {
+                AnimatedBrandLockup(
+                    markColor = Color.White,
+                    textColor = Color.White,
+                    textSize = 46.sp,
+                )
+                AnimatedVisibility(
+                    visible = showTagline,
+                    enter = fadeIn(tween(520, easing = FastOutSlowInEasing)),
+                    exit = fadeOut(),
+                ) {
+                    Text(
+                        "Discover music you love",
+                        modifier = Modifier.padding(top = 18.dp),
+                        color = Color.White.copy(alpha = 0.92f),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = FontFamily.Serif,
+                        letterSpacing = 0.2.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+
             Spacer(Modifier.weight(1f))
 
             val error = state as? SplashState.Error
-            if (error != null) {
-                Text(
-                    error.message,
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    lineHeight = 17.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-                )
-            }
-            Button(
-                onClick = {
-                    if (state is SplashState.Error) request += 1
-                },
-                enabled = state is SplashState.Error,
-                modifier = Modifier.fillMaxWidth(0.72f).height(48.dp),
-                shape = RoundedCornerShape(24.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = SplashAqua,
-                    disabledContainerColor = Color.White,
-                    disabledContentColor = SplashAqua,
-                ),
+            AnimatedVisibility(
+                visible = error != null,
+                enter = fadeIn(tween(280)),
+                exit = fadeOut(tween(180)),
             ) {
-                if (state is SplashState.Loading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(21.dp),
-                        color = SplashAqua,
-                        strokeWidth = 2.5.dp,
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                ) {
+                    Text(
+                        error?.message.orEmpty(),
+                        color = Color.White.copy(alpha = 0.95f),
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                     )
-                    Spacer(Modifier.size(10.dp))
-                    Text("Loading music…", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                } else {
-                    Text("Retry", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Button(
+                        onClick = { request += 1 },
+                        modifier = Modifier
+                            .fillMaxWidth(0.72f)
+                            .height(50.dp),
+                        shape = RoundedCornerShape(25.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = SplashDeep,
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                    ) {
+                        Text("Try again", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    TextButton(onClick = onDone) {
+                        Text("Continue offline", color = Color.White.copy(alpha = 0.9f), fontSize = 13.sp)
+                    }
                 }
             }
-            if (error != null) {
-                TextButton(onClick = onDone) {
-                    Text("Continue offline", color = Color.White, fontSize = 13.sp)
+
+            if (error == null) {
+                // Quiet progress cue — thin bar, not a loud CTA.
+                Box(
+                    Modifier
+                        .padding(bottom = 36.dp)
+                        .width(42.dp)
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(SplashFog),
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth(0.45f)
+                            .height(3.dp)
+                            .graphicsLayer {
+                                translationX = (42.dp.toPx() - size.width) * barSweep
+                            }
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color.White),
+                    )
                 }
-            } else {
-                Spacer(Modifier.height(48.dp))
             }
         }
     }
