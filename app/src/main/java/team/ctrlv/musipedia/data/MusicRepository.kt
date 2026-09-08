@@ -97,7 +97,7 @@ object MusicRepository {
 
             val fromFav = favArtistsJob.await()
             val forYou = if (firstTime) {
-                // First launch after personalize: same shelf as From Your Fav Artists (zero extra calls).
+                // First launch after personalize: seed For You from fav-artist popular hits.
                 fromFav
             } else {
                 val heard = seeds.map { it.id }.toSet()
@@ -111,7 +111,6 @@ object MusicRepository {
             val sections = listOfNotNull(
                 forYou.takeIf { it.isNotEmpty() }?.let { HomeSection("For You", it) },
                 trending.takeIf { it.isNotEmpty() }?.let { HomeSection("Trending", it) },
-                fromFav.takeIf { it.isNotEmpty() }?.let { HomeSection("From Your Fav Artists", it) },
             )
             // Never cache empty home — offline failures would stick forever in-process.
             if (sections.hasContent()) {

@@ -18,8 +18,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +44,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,7 +61,6 @@ import team.ctrlv.musipedia.innertube.SongItem
 import team.ctrlv.musipedia.innertube.YtItem
 import team.ctrlv.musipedia.innertube.hdArtwork
 import team.ctrlv.musipedia.innertube.youtubeThumb
-import androidx.compose.runtime.rememberCoroutineScope
 
 private val Cyan = Color(0xFF42E4CE)
 private val Page: Color @Composable get() = MaterialTheme.colorScheme.background
@@ -167,7 +172,7 @@ internal fun HomeContent() {
     val ready = state as? HomeUi.Ready
     val forYou = ready?.named("For You")
     val trending = ready?.named("Trending")
-    val fromFavArtists = ready?.named("From Your Fav Artists")
+    val tasteArtists = remember(tasteSignature) { tasteStore?.artists().orEmpty() }
     val nowPlaying = player?.current?.takeIf { player.playing }
     val returning = lastListened != null
     val hero = when {
@@ -242,13 +247,24 @@ internal fun HomeContent() {
             }
             item { SectionTitle("Trending", Modifier.padding(top = 22.dp)) }
             item { PosterRow(trending, placeholders = 10) { item -> item.open(player, router) } }
-            if (!fromFavArtists.isNullOrEmpty() || tasteStore?.artists()?.isNotEmpty() == true) {
-                item { SectionTitle("From Your Fav Artists", Modifier.padding(top = 22.dp)) }
+            if (tasteArtists.isNotEmpty()) {
                 item {
-                    PosterRow(
-                        fromFavArtists,
-                        placeholders = 8,
-                    ) { item -> item.open(player, router) }
+                    SectionTitle("Listen More from Your Fav Artists", Modifier.padding(top = 22.dp))
+                }
+                item {
+                    FavArtistProfilesRow(
+                        artists = tasteArtists,
+                        onArtist = { artist ->
+                            router(
+                                MusicRoute.Artist(
+                                    id = artist.id,
+                                    name = artist.name,
+                                    profileImage = artist.thumbnailUrl,
+                                ),
+                            )
+                        },
+                        onMoreArtists = { router(MusicRoute.Personalize) },
+                    )
                 }
             }
         }
@@ -369,6 +385,112 @@ private fun FeaturedHero(
                 overflow = TextOverflow.Ellipsis,
             )
         }
+    }
+}
+
+@Composable
+private fun FavArtistProfilesRow(
+    artists: List<TasteArtist>,
+    onArtist: (TasteArtist) -> Unit,
+    onMoreArtists: () -> Unit,
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 26.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        items(artists, key = { it.id }) { artist ->
+            FavArtistProfileCell(
+                name = artist.name,
+                imageUrl = artist.thumbnailUrl,
+                onClick = { onArtist(artist) },
+            )
+        }
+        item(key = "more-artists") {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .width(88.dp)
+                    .clickable(onClick = onMoreArtists),
+            ) {
+                Box(
+                    Modifier
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(Tile)
+                        .border(1.dp, Ink.copy(alpha = 0.12f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Outlined.PersonAdd,
+                        contentDescription = "More Artists",
+                        tint = Cyan,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
+                Text(
+                    "More Artists",
+                    Modifier.padding(top = 8.dp),
+                    color = Ink,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 15.sp,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FavArtistProfileCell(
+    name: String,
+    imageUrl: String?,
+    onClick: () -> Unit,
+) {
+    val art = rememberArtworkRequest(imageUrl, ArtworkSizes.Profile)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .width(88.dp)
+            .clickable(onClick = onClick),
+    ) {
+        Box(
+            Modifier
+                .size(72.dp)
+                .clip(CircleShape)
+                .background(Tile),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (!imageUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = art,
+                    contentDescription = name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+            } else {
+                Text(
+                    name.take(1).uppercase(),
+                    color = Ink.copy(alpha = 0.55f),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
+                )
+            }
+        }
+        Text(
+            name,
+            Modifier.padding(top = 8.dp),
+            color = Ink,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            lineHeight = 15.sp,
+        )
     }
 }
 

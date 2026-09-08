@@ -89,6 +89,12 @@ fun MusiumHomeScreen() {
                 fullPlayer = false
                 showDownloads = true
             }
+            MusicRoute.Personalize -> {
+                clearBrowse()
+                fullPlayer = false
+                showDownloads = false
+                showTaste = true
+            }
             else -> {
                 fullPlayer = false
                 showDownloads = false
@@ -170,6 +176,7 @@ fun MusiumHomeScreen() {
                     is MusicRoute.Playlist -> PlaylistScreen(route.id, route.name, onBack = { goBack() })
                     MusicRoute.Downloads -> DownloadsScreen(darkMode = darkMode, onBack = { goBack() })
                     MusicRoute.Favorites -> Unit
+                    MusicRoute.Personalize -> Unit
                     null -> Unit
                 }
             }
