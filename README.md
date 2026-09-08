@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="brand/musicpedia-lockup-dark.png" alt="MusiPedia" width="300" />
+  <img src="brand/musipedia-lockup-dark.png" alt="MusiPedia" width="360" />
 </p>
 
 <p align="center">
@@ -28,10 +28,6 @@ MusiPedia is a lightweight music discovery and playback app for Android. It comb
 - Light and dark themes
 - Animated startup with Home feed preloading
 - In-player equalizer with presets and bass boost
-
-## Future plan
-
-- **Karaoke / mute vocals** — lightweight path (prefer instrumental/karaoke uploads; optional live mid/side mute as fallback). Heavier stem separation (on-device or server) is out of scope for now.
 
 ## Installation
 

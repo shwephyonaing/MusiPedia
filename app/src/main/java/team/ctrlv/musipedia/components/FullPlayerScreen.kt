@@ -230,7 +230,6 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                 LyricsPanel(
                     lyrics = lyrics!!,
                     positionMs = position,
-                    durationMs = duration,
                     offsetMs = lyricOffsetMs,
                     modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
                 ) { time ->

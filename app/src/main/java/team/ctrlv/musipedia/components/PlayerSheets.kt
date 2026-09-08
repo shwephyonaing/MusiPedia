@@ -69,7 +69,6 @@ private val Scrim = Color.Black.copy(alpha = 0.45f)
 internal fun LyricsPanel(
     lyrics: Lyrics,
     positionMs: Long,
-    durationMs: Long = 0L,
     /** Positive delays lyrics (use when lines appear too early). */
     offsetMs: Long = 0L,
     modifier: Modifier = Modifier,

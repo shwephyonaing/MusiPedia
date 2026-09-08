@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1205" height="472" viewBox="0 0 1205 472" role="img" aria-label="MusiPedia">
+  <rect width="1205" height="472" fill="#0B0B0B"/>
+  <!-- Matches splash AnimatedBrandLockup: Roboto Medium 46sp, markH=0.75*text, shared centerline -->
+  <g fill="#00C2CB">
+    <rect x="160.00" y="167.00" width="23.60" height="138.00" rx="11.80"/>
+    <rect x="196.38" y="227.72" width="23.60" height="77.28" rx="11.80"/>
+    <rect x="232.76" y="263.60" width="23.60" height="41.40" rx="11.80"/>
+    <rect x="269.14" y="219.44" width="23.60" height="85.56" rx="11.80"/>
+    <rect x="305.52" y="167.00" width="23.60" height="138.00" rx="11.80"/>
+  </g>
+  <text x="365.11" y="255" fill="#FFFFFF"
+        font-family="Roboto, Helvetica, Arial, sans-serif"
+        font-size="184" font-weight="500" letter-spacing="-2.4"
+        dominant-baseline="middle">usiPedia</text>
+</svg>
