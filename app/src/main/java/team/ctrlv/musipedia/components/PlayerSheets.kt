@@ -112,7 +112,7 @@ internal fun LyricsPanel(
 
 /** In-hierarchy sheet — avoids ModalBottomSheet Dialog tap-through bugs. */
 @Composable
-private fun PlayerOverlaySheet(
+internal fun PlayerOverlaySheet(
     onDismiss: () -> Unit,
     heightFraction: Float,
     content: @Composable ColumnScope.() -> Unit,

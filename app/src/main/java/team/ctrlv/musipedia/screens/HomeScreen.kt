@@ -74,6 +74,7 @@ internal fun HomeContent() {
     val context = LocalContext.current
     val recentsStore = (context.applicationContext as? MusiumApplication)?.recentStore
     val favoriteStore = (context.applicationContext as? MusiumApplication)?.favoriteStore
+    val tasteStore = (context.applicationContext as? MusiumApplication)?.tasteStore
     var recents by remember { mutableStateOf(recentsStore?.songs().orEmpty()) }
     var favorites by remember { mutableStateOf(favoriteStore?.songs().orEmpty()) }
     var state by remember { mutableStateOf<HomeUi>(HomeUi.Loading) }
@@ -81,14 +82,19 @@ internal fun HomeContent() {
     val downloads = (OfflineDownloads.inFlight.values + OfflineDownloads.songs).distinctBy { it.id }
     val lastListened = recents.firstOrNull()
 
+    val tasteSignature = tasteStore?.artists()?.joinToString(",") { it.id }.orEmpty()
+
     LaunchedEffect(player?.current?.id, player?.playing) {
         recents = recentsStore?.songs().orEmpty()
         favorites = favoriteStore?.songs().orEmpty()
     }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(tasteSignature, reload) {
+        if (reload > 0) state = HomeUi.Loading
         val seeds = recentsStore?.songs().orEmpty().take(5)
+        val tastes = tasteStore?.artists().orEmpty()
+        val force = reload > 0
         runCatching {
-            MusicRepository.homeFeed(seeds, force = false).collect { sections ->
+            MusicRepository.homeFeed(seeds, tastes, force = force).collect { sections ->
                 if (sections.any { it.items.isNotEmpty() }) {
                     state = HomeUi.Ready(sections)
                 }
@@ -97,23 +103,6 @@ internal fun HomeContent() {
             if (state !is HomeUi.Ready) {
                 state = HomeUi.Error(it.message ?: "Unable to load charts")
             }
-        }
-        if (state !is HomeUi.Ready) {
-            state = HomeUi.Error("Couldn't load home. Check your connection and retry.")
-        }
-    }
-    LaunchedEffect(reload) {
-        if (reload == 0) return@LaunchedEffect
-        state = HomeUi.Loading
-        val seeds = recentsStore?.songs().orEmpty().take(5)
-        runCatching {
-            MusicRepository.homeFeed(seeds, force = true).collect { sections ->
-                if (sections.any { it.items.isNotEmpty() }) {
-                    state = HomeUi.Ready(sections)
-                }
-            }
-        }.onFailure {
-            state = HomeUi.Error(it.message ?: "Unable to load charts")
         }
         if (state !is HomeUi.Ready) {
             state = HomeUi.Error("Couldn't load home. Check your connection and retry.")
@@ -154,6 +143,7 @@ internal fun HomeContent() {
     val ready = state as? HomeUi.Ready
     val forYou = ready?.named("For You")
     val trending = ready?.named("Trending")
+    val fromFavArtists = ready?.named("From Your Fav Artists")
     val nowPlaying = player?.current?.takeIf { player.playing }
     val returning = lastListened != null
     val hero = when {
@@ -228,6 +218,15 @@ internal fun HomeContent() {
             }
             item { SectionTitle("Trending", Modifier.padding(top = 22.dp)) }
             item { PosterRow(trending, placeholders = 10) { item -> item.open(player, router) } }
+            if (!fromFavArtists.isNullOrEmpty() || tasteStore?.artists()?.isNotEmpty() == true) {
+                item { SectionTitle("From Your Fav Artists", Modifier.padding(top = 22.dp)) }
+                item {
+                    PosterRow(
+                        fromFavArtists,
+                        placeholders = 8,
+                    ) { item -> item.open(player, router) }
+                }
+            }
         }
     }
 }

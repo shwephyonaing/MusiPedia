@@ -11,31 +11,48 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+
+private enum class LaunchGate { Splash, Taste, Home }
 
 @Composable
 fun MusiumApp() {
-    var showIntro by rememberSaveable { mutableStateOf(true) }
+    val context = LocalContext.current
+    val tasteStore = remember {
+        (context.applicationContext as MusiumApplication).tasteStore
+    }
+    var gate by rememberSaveable {
+        mutableStateOf(LaunchGate.Splash)
+    }
+
     AnimatedContent(
-        targetState = showIntro,
+        targetState = gate,
         transitionSpec = {
-            if (!targetState) {
-                (fadeIn(tween(520, easing = FastOutSlowInEasing)) +
-                    scaleIn(
-                        initialScale = 0.985f,
-                        animationSpec = tween(520, easing = FastOutSlowInEasing),
-                    )) togetherWith fadeOut(tween(360))
-            } else {
-                fadeIn(tween(420)) togetherWith fadeOut(tween(300))
-            }.using(SizeTransform(clip = false))
+            (fadeIn(tween(480, easing = FastOutSlowInEasing)) +
+                scaleIn(
+                    initialScale = 0.985f,
+                    animationSpec = tween(480, easing = FastOutSlowInEasing),
+                )) togetherWith fadeOut(tween(320)) using SizeTransform(clip = false)
         },
-        label = "splashToHome",
-    ) { splashVisible ->
-        if (splashVisible) {
-            BrandIntro(onDone = { showIntro = false })
-        } else {
-            MusiumHomeScreen()
+        label = "launchGate",
+    ) { step ->
+        when (step) {
+            LaunchGate.Splash -> BrandIntro(
+                onDone = {
+                    gate = if (tasteStore.hasOnboarded()) LaunchGate.Home else LaunchGate.Taste
+                },
+            )
+            LaunchGate.Taste -> TastePickerScreen(
+                store = tasteStore,
+                title = "Personalize",
+                subtitle = "Please choose at least 3 artists to personalize your interface",
+                confirmLabel = "Continue",
+                onDone = { gate = LaunchGate.Home },
+            )
+            LaunchGate.Home -> MusiumHomeScreen()
         }
     }
 }

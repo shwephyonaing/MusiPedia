@@ -51,6 +51,7 @@ internal fun SettingsScreen(
     onDarkModeChange: (Boolean) -> Unit = {},
     onBack: () -> Unit = {},
     onDownloads: () -> Unit = {},
+    onPersonalize: () -> Unit = {},
 ) {
     val context = LocalContext.current
     var showAbout by remember { mutableStateOf(false) }
@@ -68,6 +69,13 @@ internal fun SettingsScreen(
         ) {
             Icon(Icons.Outlined.KeyboardArrowDown, "Settings", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        SettingsOption(
+            "Personalize",
+            "Artists for your For You page",
+            textColor,
+            mutedColor,
+            onPersonalize,
+        )
         SettingsOption("Downloads", "Songs available offline", textColor, mutedColor, onDownloads)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {

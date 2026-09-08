@@ -63,6 +63,7 @@ fun MusiumHomeScreen() {
     var stack by remember { mutableStateOf<List<MusicRoute>>(emptyList()) }
     var fullPlayer by remember { mutableStateOf(false) }
     var showDownloads by remember { mutableStateOf(false) }
+    var showTaste by remember { mutableStateOf(false) }
     var showOfflineDialog by remember { mutableStateOf(false) }
     var darkMode by remember { mutableStateOf(appearancePreferences.getBoolean("dark_mode", false)) }
     val showTabs = destination == null
@@ -103,6 +104,7 @@ fun MusiumHomeScreen() {
     fun goBack(): Boolean {
         when {
             fullPlayer -> fullPlayer = false
+            showTaste -> showTaste = false
             showDownloads -> showDownloads = false
             destination != null -> {
                 destination = stack.lastOrNull()
@@ -114,7 +116,7 @@ fun MusiumHomeScreen() {
         return true
     }
 
-    BackHandler(enabled = fullPlayer || showDownloads || destination != null || selectedTab != 0) { goBack() }
+    BackHandler(enabled = fullPlayer || showTaste || showDownloads || destination != null || selectedTab != 0) { goBack() }
 
     MusiumTheme(darkMode = darkMode) {
     CompositionLocalProvider(LocalMusicRouter provides router) {
@@ -153,6 +155,20 @@ fun MusiumHomeScreen() {
                     },
                     onBack = { selectedTab = 0 },
                     onDownloads = { showDownloads = true },
+                    onPersonalize = { showTaste = true },
+                )
+            }
+            KeepAlive(visible = showTaste, animateFromBottom = true) {
+                val tasteStore = (context.applicationContext as MusiumApplication).tasteStore
+                TastePickerScreen(
+                    store = tasteStore,
+                    title = "Personalize",
+                    subtitle = "Please choose at least 3 artists to personalize your interface",
+                    confirmLabel = "Save",
+                    onDone = {
+                        showTaste = false
+                        selectedTab = 0
+                    },
                 )
             }
             KeepAlive(visible = showDownloads, animateFromBottom = true) {

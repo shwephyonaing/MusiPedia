@@ -112,7 +112,11 @@ internal fun BrandIntro(onDone: () -> Unit) {
             coroutineScope {
                 val minimumSplash = async { delay(2350) }
                 val home = async {
-                    MusicRepository.home(recentStore?.songs().orEmpty().take(5), force = false)
+                    MusicRepository.home(
+                        recentStore?.songs().orEmpty().take(5),
+                        (context.applicationContext as? MusiumApplication)?.tasteStore?.artists().orEmpty(),
+                        force = false,
+                    )
                 }
                 minimumSplash.await()
                 home.await()

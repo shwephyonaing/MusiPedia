@@ -39,6 +39,7 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Lyrics
 import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PlayArrow
@@ -116,6 +117,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     var lyricsOn by remember(song.id) { mutableStateOf(false) }
     var showQueue by remember { mutableStateOf(false) }
     var showSleep by remember { mutableStateOf(false) }
+    var showRingtone by remember { mutableStateOf(false) }
     var showActions by remember { mutableStateOf(false) }
     var openingArtist by remember { mutableStateOf(false) }
     var confirmRemoveDownload by remember { mutableStateOf(false) }
@@ -172,7 +174,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
         }.getOrNull()
     }
     val duration = player.duration.coerceAtLeast(1L)
-    val sheetOpen = showQueue || showSleep
+    val sheetOpen = showQueue || showSleep || showRingtone
     Box(
         Modifier
             .fillMaxSize()
@@ -384,6 +386,21 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                         contentPadding = PaddingValues(horizontal = 13.dp),
                         onClick = { showActions = false; showSleep = true },
                     )
+                    HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
+                    DropdownMenuItem(
+                        modifier = Modifier.height(44.dp),
+                        text = { Text("Set ringtone", color = Ink, fontSize = 12.sp) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Outlined.NotificationsActive,
+                                null,
+                                tint = Color(0xFF8B9490),
+                                modifier = Modifier.size(20.dp),
+                            )
+                        },
+                        contentPadding = PaddingValues(horizontal = 13.dp),
+                        onClick = { showActions = false; showRingtone = true },
+                    )
                 }
             }
         }
@@ -466,6 +483,14 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     }
     if (showQueue) QueueSheet(player) { showQueue = false }
     if (showSleep) SleepTimerSheet(player) { showSleep = false }
+    if (showRingtone) {
+        RingtoneSheet(
+            song = song,
+            player = player,
+            durationMs = duration,
+            onDismiss = { showRingtone = false },
+        )
+    }
     }
     if (confirmRemoveDownload) {
         DeleteDownloadConfirmDialog(

@@ -38,7 +38,11 @@ object MusicRepository {
         client.searchSuggestions(query)
     }
 
-    fun homeFeed(recent: List<PlayableSong> = emptyList(), force: Boolean = false): Flow<List<HomeSection>> = flow {
+    fun homeFeed(
+        recent: List<PlayableSong> = emptyList(),
+        tasteArtists: List<TasteArtist> = emptyList(),
+        force: Boolean = false,
+    ): Flow<List<HomeSection>> = flow {
             val hit = cachedHome?.takeIf { !force && it.hasContent() }
             if (hit != null) {
                 emit(hit)
@@ -51,9 +55,11 @@ object MusicRepository {
             val chartHits = async {
                 runCatching { client.appleMostPlayed(10, chartCountry = "mm") }.getOrDefault(emptyList())
             }
+            val favArtistsJob = async { songsFromFavArtists(tasteArtists) }
             val seeds = recent.take(5).map { it.toSongItem() }
             val mixJob = async {
-                val mixSeeds = seeds.ifEmpty {
+                val tasteSeeds = tasteSeedSongs(tasteArtists)
+                val mixSeeds = (seeds + tasteSeeds).distinctBy { it.id }.ifEmpty {
                     val first = chartHits.await().firstOrNull() ?: return@async emptyList()
                     listOfNotNull(
                         runCatching {
@@ -65,7 +71,7 @@ object MusicRepository {
                         ),
                     )
                 }
-                buildForYouMix(mixSeeds)
+                buildForYouMix(mixSeeds.take(5))
             }
 
             val trending = resolveChartHits(chartHits.await())
@@ -77,12 +83,14 @@ object MusicRepository {
             )
 
             val heard = seeds.map { it.id }.toSet()
-            val forYou = (mixJob.await().filter { it.id !in heard } + trending)
+            val fromFav = favArtistsJob.await()
+            val forYou = (mixJob.await().filter { it.id !in heard } + fromFav + trending)
                 .distinctBy { it.id }
                 .take(10)
             val sections = listOfNotNull(
                 forYou.takeIf { it.isNotEmpty() }?.let { HomeSection("For You", it) },
                 trending.takeIf { it.isNotEmpty() }?.let { HomeSection("Trending", it) },
+                fromFav.takeIf { it.isNotEmpty() }?.let { HomeSection("From Your Fav Artists", it) },
             )
             // Never cache empty home — offline failures would stick forever in-process.
             if (sections.hasContent()) cachedHome = sections
@@ -90,9 +98,13 @@ object MusicRepository {
         }
     }.flowOn(Dispatchers.IO)
 
-    suspend fun home(recent: List<PlayableSong> = emptyList(), force: Boolean = false): List<HomeSection> {
+    suspend fun home(
+        recent: List<PlayableSong> = emptyList(),
+        tasteArtists: List<TasteArtist> = emptyList(),
+        force: Boolean = false,
+    ): List<HomeSection> {
         var latest = cachedHome.orEmpty()
-        homeFeed(recent, force).collect { latest = it }
+        homeFeed(recent, tasteArtists, force).collect { latest = it }
         return latest
     }
 
@@ -168,6 +180,45 @@ object MusicRepository {
                         }
                 }
             }.awaitAll().filterNotNull()
+        }
+    }
+
+    private suspend fun tasteSeedSongs(artists: List<TasteArtist>): List<SongItem> {
+        if (artists.isEmpty()) return emptyList()
+        return coroutineScope {
+            artists.take(5).map { artist ->
+                async {
+                    val fromBrowse = runCatching { client.artist(artist.id).songs.firstOrNull() }.getOrNull()
+                    fromBrowse?.copy(artistId = artist.id, subtitle = artist.name)
+                        ?: runCatching {
+                            client.findSong(artist.name, youtubeOnly = true)
+                        }.getOrNull()?.copy(artistId = artist.id, subtitle = artist.name)
+                }
+            }.awaitAll().filterNotNull()
+        }
+    }
+
+    private suspend fun songsFromFavArtists(artists: List<TasteArtist>): List<SongItem> {
+        if (artists.isEmpty()) return emptyList()
+        return coroutineScope {
+            interleave(
+                artists.take(8).map { artist ->
+                    async {
+                        val pageSongs = runCatching { client.artist(artist.id).songs }.getOrDefault(emptyList())
+                        val songs = pageSongs.ifEmpty {
+                            runCatching {
+                                client.search(artist.name).songs
+                            }.getOrDefault(emptyList())
+                        }
+                        songs.take(4).map {
+                            it.copy(
+                                artistId = it.artistId ?: artist.id,
+                                subtitle = it.subtitle ?: artist.name,
+                            )
+                        }
+                    }
+                }.awaitAll(),
+            ).take(12)
         }
     }
 

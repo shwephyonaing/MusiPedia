@@ -67,6 +67,13 @@ android {
     }
 }
 
+// Keep bundled offline fallback in sync with repo catalog (edit catalog/ only).
+tasks.register<Copy>("syncVerifiedArtistsAsset") {
+    from(rootProject.file("catalog/verified-artists.json"))
+    into(layout.projectDirectory.dir("src/main/assets/catalog"))
+}
+tasks.named("preBuild").configure { dependsOn("syncVerifiedArtistsAsset") }
+
 kotlin {
     compilerOptions {
         freeCompilerArgs.add("-opt-in=androidx.media3.common.util.UnstableApi")

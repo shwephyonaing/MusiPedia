@@ -65,6 +65,32 @@ The APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
 
 For YouTube client configuration and troubleshooting, see [YOUTUBE_SETUP.md](YOUTUBE_SETUP.md).
 
+## Verified artists catalog
+
+Taste personalization uses a curated artist list (no live YouTube Music artist search). The source of truth is:
+
+[`catalog/verified-artists.json`](catalog/verified-artists.json)
+
+Installed apps fetch that file from GitHub (`main`) at launch and cache it. Offline installs fall back to the copy bundled in the APK.
+
+To add an artist without shipping a new APK:
+
+1. Append an entry to `catalog/verified-artists.json` (`id` = YouTube channel UC…, `name`, optional `thumbnailUrl` / `handle` / `region`).
+2. Commit and push to `main`.
+3. Open the app (or Settings → Personalize); it refreshes within a few hours, or immediately on next cold start after the cache TTL.
+
+Example:
+
+```json
+{
+  "id": "UCiRZvmSslB0MVU5NL7iYnrw",
+  "name": "Hsu Rinna",
+  "handle": "@Hsu_Rinaa",
+  "thumbnailUrl": "https://yt3.googleusercontent.com/…=s900-c-k-c0x00ffffff-no-rj",
+  "region": "mm"
+}
+```
+
 ## Creating a release
 
 Maintainers should follow [RELEASING.md](RELEASING.md). It covers version numbers, signed APK generation, Git tags, release notes, and uploading the APK to GitHub Releases.

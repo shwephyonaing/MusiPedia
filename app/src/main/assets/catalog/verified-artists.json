@@ -1,0 +1,547 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-08",
+  "artists": [
+    {
+      "id": "UC89DR_JHR47nnL09fR9qQ4g",
+      "name": "G Fatt",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_n-Y-k0lYvTAV8nQ0cUe0u2SMnqsuWgbtIRVOiqHp2q3Jg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCRwlxhCbAXdTxsECwn95BFw",
+      "name": "Doublej",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/mA_Rrk2sBWk5GnJh5TJ0aUxhoGbO7Z7m84_ZKy6Kbl3zRXV8RVScO_fq3ld4goDHonrLDr3V8Q=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCQLHPidxMSrZqMfHpo4_URA",
+      "name": "Floke Rose",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/Xrlm_1rmZGObdJIJp_-h0LwrEQD8EyXcb9SK3Wsg6E_H6iNbUTKv4aYcjEJm_cowCFnk2mPz=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCrtcpZljwss7j1dEzcRM4Zg",
+      "name": "R Zarni",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/kqxTsT0zARlQAzaa5IA9lg_Pu1Zb1fFAdRsQCUUoAr0UftZNM46SyC4ldtlXH5GC9-ePx0qJRQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UC9wuFApFnuG0JsUYzju0ZXA",
+      "name": "Ni Ni Khin Zaw",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_mQqpQdez3r0q_lMNRTcx6eEA_Wz5ndimhdtBm-wmO0kB8=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCu1uFm1xJ5F1IpfEk1D3t_A",
+      "name": "Sai Sai Kham Leng",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/wkIwuzvMXAyECFsxJze3YCVxNB1whcu5ASGvp0nOhFjPmc5d4nH92B-ghFpUVMpLft7mJDnSfw=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UC1TAuArE7MVe9m7AGAO501g",
+      "name": "Yair Yint Aung",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/j_JxYmCKjTYfp5BmRneZFYvN19qPndqoqgUHbeXNXP8Yi-ljX5pJnMcRsaw-pSoIVOeH4-DEKA=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCMF1IZjfEUY2ybMaFQ1eKiA",
+      "name": "Bunny Phyoe",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/aQ8McE15iUnksXJx66Q3qLKYBOd1_aNkzjrNzKg2mecHK6wvKqwt6wJSnyGmWoD_Mm1NTGbaFmc=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCyMc4l20SV-VN3lNjtrFssA",
+      "name": "Hlwan Paing",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/fDu2BLNGQiMraQxg23_JTTYG17t2D44RwZdmVR7M3ckhWBnH823oTxZ2CVHscCQEy6EaffEVMQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UC7QanNj26usfcvDEuy3P1Qg",
+      "name": "Ah Moon",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/dGD_BYQuBUHvNteSOXnCudOUC_vBB37rppb2u_bYFIdeAnMqEhJWi2ZCqwJj7EEOVRrLd0vq1Q=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCjyPm5izbs04uW7IRkZllxQ",
+      "name": "Myo Gyi",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/JPOgMVBJqyOvOLTDK-qOhmul_BvI5mT7zqt4Iw9FZg3dL1Zg2ZMXdcMzVQIbyeeoNfcm5Z15=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCGyPKV97805_BsmTcZusbyw",
+      "name": "Zaw Paing",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_lchq3ZTJqJX0rdIStC0iXtLGGcyBsHv-v7GT8dJd4e2Q=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCy8todw3WsE2Gg1Ei-8748Q",
+      "name": "Phyu Phyu Kyaw Thein",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_naP4ic7ZyYcXv7fVoyk0M08JaTsGXYBlKAT-LCT2IRXQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCbMMKHcypwmaY9gGWPYv6Gg",
+      "name": "Wyne Su Khaing Thein",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_lWPiD60dv5A8de7xrgeo1HGgr2ONAl2kCqaSYwt6qNTQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UC5MlJRjGTrJRD9ZLniZaMCw",
+      "name": "Chan Chan",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/tler1R3NgG6snWnSsvTzkL2glBK4t7s4TQmu24EWdMQCZRJ5O2MIWCY-h9qaHB1J8VDjFdFwXHc=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCbcX83M7mVSswMDQbSFd4jA",
+      "name": "L Seng Zi",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/nEGnQW2AtsR-xSveU9LGdHLVQdC_aQVQjqqhopNOZBFONFIorav5H2-HS7RYfXKyzqu2AZ6E8A=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCX7sAZlia0q0mDArxJPwYOQ",
+      "name": "May Sweet",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/sg5g33PsmLlasXUrwTQ5mREuCyM0xCxrAT4klOdMLzJPO5xX1Wtr1JVylVHYEoOHiMNn8SnB2UM=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCXBAHmN-VZdCjRNXHtcKQzg",
+      "name": "Htoo Eain Thin",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/c7TootPqClMuw32csuZr-xnSDCsMXjN9oNbx_zLkRJgxJdDBSP8_arY0IXOxmnUv4YC4NP1s7w=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UC12j7ZKu1yq4aF013eq4LZA",
+      "name": "Soe Lwin Lwin",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/8nwwI4iRsNgXlzkaTjUB3F78QZwY842dOlXx_VR0Z4bbDSCRt61guz0RGZCGfZqUZBB00X1oieI=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCX1oYcMCd_0oc6PaYPDjUYw",
+      "name": "Sai Htee Saing",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/psKazNi_C3TO3pVm71uJEUAIajoO48CDjFxpUHxGL3zDwFgoEI37nvOfItBt78JsEP2GeEjfsg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCE1OCbuQgNYde1tl1arxMNw",
+      "name": "Oak Soe Khant",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/-rGfmQ72v3bogjGNVtS2G6P9j4JwVSxkMHU1EpIeYQXk0sGWlDf9aLCF2pOiMP_TzFbzSa1fEA=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCGvbidYOdD8rH0LJlVmZb5g",
+      "name": "BG18",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/g_U93qSb-QUx5a2VIPqUHkbxK1YkGCup2hOk0dzaFt0Ta1u-a_y73gATfhP2m2upN1OP4YatZvU=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCw5niBVJVpoji3fAQo0bXbw",
+      "name": "Mie Mie Win Pe",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_nt9n2JJp9owZE4Llv-0GziBVnmP3opxl87uXTDOS2lnQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCadTbYtm-qXjK62AqEI_GlQ",
+      "name": "Khin Maung Toe",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/o4eh0TphIS4Q_dQJiVapjoe-X3mUi7l4HwleqAw0PBuYzY3IBAeAkKiNJI8QM5E0oAJG3s9B=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UChKYhqHa6xWa_o09_qwvkAw",
+      "name": "Ma Naw",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_nfyGEFpc7MIN_FIwUQ0PlLMCodmkDZ5uP3PQ7EC3fo1g=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UC6OvLpTRIZnzYKqSpPb61tA",
+      "name": "GUNN",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/Mb6Im-QR2kMoq-z8GqD3bZFSMnygdpTKDiUXvq9VaUmMTTsi7ZaHT9W74xnIkYSQgyuoxHXF9Q=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UC5ShwpBqKkB4lzB85JAsn6A",
+      "name": "X-BOXIN",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/mfV0jwFURFB9ND0GFRcRSP2TygEZpubJ834r_5DwHPbMKHwPb5tEcwbZ6sCVOm1VMCvuaoqDE5Y=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCk2gD6Bq--VI792pzSdYWEw",
+      "name": "J-Fire",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/luBSig-ClLsd24AyHPK0QTAx0chjHbuV9cfD0ghzT2WuQrBfFDCTeQFuK2CoWoDlJM6t05oJ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCX9OF0lcyEZtQIPIDEPYonQ",
+      "name": "Big Bag",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_lz1DKAabhJ0stWAhjOJtACqES9SHKL1T31IstUvy74_sg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCI7fDlrZr2fPCc9FVMyMOtw",
+      "name": "Phyo Lay",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/_yr9KOiRyyCc9Vsi2GSNtjsttuIsrQC_guMOz6WvvpL4hzqyj66l0HPfio558vbG8DGU27lgZw=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCpMQ6eURWfaAqeKvUBMUT2g",
+      "name": "Ki Ki Kyaw Zaw",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/jd0sFItAakFHc5cvUzxkCvABxPBy1khq5cfE3o8VWtJUGe1hMmPMSR1Xaj995ZT0LjL9QNaoiw=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCR4Ynj--IgaeBLBkul1IG6A",
+      "name": "Lay Phyu",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_m24hf_a0ELL5nXtmLicbHOZOnmfWVw5Ej4Ap_5YihuXrQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCC80c-xtRMOu6cIob017Czg",
+      "name": "Iron Cross",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_k_YYK3DguaTmEf0OS9ni-p8B3OjUgYPwUVGcv44bnzgXOkhkPcnYEaaiqygACONf8Oaw=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCxKJYv1lFydAzwLNRfNK5aQ",
+      "name": "Eaint Chit",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_kfzHP9QZ_JY3iAEeJfbhJgRJVRExNbNZONewhs2jkXB2A=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCIfbim66g7TUI6fwmE_up0A",
+      "name": "Tha Har Aung",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ys7YhkKe7fBvVhFQq7taHHX-zV3KttGASzkzOEZbFmUrDGCG-JWNynRsK7EZ_eiuTYENLh7qfg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCdl77XZe83RFS83RB0rnolA",
+      "name": "Thar Dee Lu",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/fsIO6rdg-0rbZ92yOcuGjbxJfaog4Ro_7yRk-uhMhOCqumVb2cVDSbBs3ypbSXLffHy4gfpq4g=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UC6FfbKKCua5j7iZlO34YAaA",
+      "name": "Athen Cho Swe",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_n25oVRgykm64eApSNTr2s9kjPlIXuEIk-21C9X04prFHg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCH6FZiKCAxmFlWAVuDZgCwg",
+      "name": "Mi Sandi",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/3_Z-hi01KgW5I7f0atjcUQjusOBAhTgOrSTZZ-7-b0Mp8v9GPmRom0hL0MHuFqFn78POzFl0Aw=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCHSUTzgU1F-JMC_c0zKyMLQ",
+      "name": "Lu Hpring",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/3GMKTVZliCPTLwuJdQSFw1SRXmV8Ng6Z4Uc7YmZfDEKHfaJXGDEG8yHMnUl9weRzd77blVND=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCFUAaCh13f8IRmjhl-dcKSQ",
+      "name": "Wink",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/Ryixfn5ZxwzkkqXEDVg_D10N_Q00oBB87MdKIl_hNS1nCcfyJs_s5GLrG54OilTnOHMlHDHbzQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UC_v4FCgf9BZS4C7K3ZYMpXg",
+      "name": "BLACKPEACE",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/S12WDZhVuklpuT1HowFw7I85s9nxTOHqNV1a3as7_Q-BlAprpe21V1D5_LFx84XAfmz_vNnz=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCb8b7xklyJljZtwQ8IAxvzQ",
+      "name": "Lil Kee Boi",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/vt12xSQgp0pmEiGEzACXooPrAA45eu01u6JMHZ5_1Xq7JKxny-Cph2wIcur4B-LOnEkLd6Cikg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCiRZvmSslB0MVU5NL7iYnrw",
+      "name": "Hsu Rinna",
+      "handle": "@Hsu_Rinaa",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ULbaK5dzQpKBhjU-T8AB_BsCD_3NJFnFXjst5uk1niIz5KRAnFuOHo07KiEE0FaqbpMrk1dV=s900-c-k-c0x00ffffff-no-rj",
+      "region": "mm"
+    },
+    {
+      "id": "UCmBA_wu8xGg1OfOkfW13Q0Q",
+      "name": "Bad Bunny",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/Ys37SrZ6B7RUW8_X3YvQet7VCFNnWa5C5PXe09OgIoY9UkTt1GpP_zap1-w2VF5gZcyS5xQmbJs=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCjIA3wwhi0QjSOXAZwOXbPA",
+      "name": "Ozuna",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/5t-WiP2WVdiKFBKknutXSDuz6tBQFW8qKxyHWTMrUxZaUB_OVDCnhv4z4o4k-Czmn6qGG8h_=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCIwFjwMjI0y7PDBVEO9-bkQ",
+      "name": "Justin Bieber",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/4Mz5el_eyeB5cBod2jHMV-CC3fYiuSmDuCT9A9tGyYh03KQyVdrP04KYYMttZItBCtn4kfef=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCLkAepWjdylmXSltofFvsYQ",
+      "name": "BTS",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/NNG93LntJGDpMlGYIhavu2n4gREs7CNbNT8jjG-7dpotBa5uQDHhuOL8e_oU4ihzWhlwdCmsJw0=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCOmHUn--16B90oW2L6FRR3A",
+      "name": "BLACKPINK",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/U3VrCkKjzTpQ3VYv4SCPjNfDHeJV-swGNnhLYhr0nV4lZz_GVUNzK4EB-HFRfKv9S5VNh14uAg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCRE-097LGtx_Zo7LrHvkycA",
+      "name": "JISOO",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/E4RnMqJGtHUINy5pBfGI8APNS4D_3p27aBXP4Da67kR8moYEOxwXS3r2OAagCiLYW_li1BnT-g=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCNYi_zGmR519r5gYdOKLTjQ",
+      "name": "JENNIE",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/Pb5o6YfIvifCkLV5IZ2J_DoP8KtOneSrE6u_ap-0x_45Lzoej4cX8sv12RXLgM7EDH_gpZ7t=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCBo1hnzxV9rz3WVsv__Rn1g",
+      "name": "ROSÉ",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/qjsflFmyakGs5ekX8fPsDNfuKABx-yxIDrv-4ooPAFcZ6JUUpUPlue7g_d-VAk2YAiYR-0yr=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCAWFdPNu8WQ-Wi6VoZ1tadQ",
+      "name": "LISA",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/4Rz9OXnXBRO1dxax1z6LIOSxEFChAhI_roAbbuK4FY7V8vmkEW4Gg3QEnjdpgTmu5pJPRUXXiw=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UC9rMiEjNaCSsebs31MRDCRA",
+      "name": "Stray Kids",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/CIofqs6QaCJq7bD8vo_C1__1udt4A7rIpbnOna8v09Q2NPlO5F-rAmAxZKciQRY0w-_40XEA2pA=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UC9GtSLeksfK4yuJ_g1lgQbg",
+      "name": "aespa",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ViYqIYAJTZj5RmgEdO-ob0WUtUW3uMZrLq3J7mHL0EX-VZf5KBJTid75w7Ojq5lbBTq-sHYa-pY=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCMki_UkHb4qSc0qyEcOHHJw",
+      "name": "NewJeans",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/seIPyT29v_T3KcqQ1aHoAC8qHBVH4Pz4pPa1qpZL623ypce3of75-uA5US-TZyk5WwZLUO0n3A=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCpQUUKbKD4LIfsMH3Uj7YhQ",
+      "name": "IVE",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/CTUTc1mfo30R5V7zmRaKt9asz7Q3apRdeFqj16A_JEL1f2IQsX6C24lMwT2DdOmvBTEjO333SQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCtiObj3CsEAdNU6ZPWDsddQ",
+      "name": "TXT",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/BduyBJNA9Id8u23W2MEMyNiH7uDzwL0p5A4XqMcOuggTML_xHSzvj_Oq8SWSW9lJabdqzwWIpg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UC9FnI_CuM5XVmRZj82lZc5A",
+      "name": "ENHYPEN",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/VzMWhtrXHS4lgEj5AYvRgQ2-053hr178pCdFDml3vyC2VGkUXRU-msAV9vyMGFFT7qpQluVM=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCQeWXvBWW5Gu9ZfOpkzic7g",
+      "name": "IU",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_lpM8TIE9vYil0DVSkx_yyFLcDqbQJRVcBpCjZYNGqB8iw=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCYLNGLIzMhRTi6ZOLjAPSmw",
+      "name": "Shakira",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/FhrbXrCCkXlRFrTlJR6uZMzZO0PvnUoQdqK2b920BF6IjDsScsYwixMcLQHtwDy-CnWAWB0yiD4=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCqECaJ8Gagnn7YCbPEzWH6g",
+      "name": "Taylor Swift",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/jzrwZgK5o0Ng2GT7oA7Na-hay4abtEl13lByjSQm6FW-K-dBu_ruvVk6vVF2vM6igC2GTRLO=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCByOQJjav0CUDwxCk-jVNRQ",
+      "name": "Drake",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_lCPp6jFXJWIVHM0fIK5HofL3nyLOsmhu1Ek2OwyppYlOM=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UC0WP5P-ufpRfjbNrmOWwLBQ",
+      "name": "The Weeknd",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/WHvw1ak1FcJaHeEiTmG2iN0dqEjjPxAtT_tA8ruJ3MlNr9I-RHsAur1iAenYeQN_d6LNPH2Z8Ic=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCfM3zsQsOnfWNUppiycmBuw",
+      "name": "Eminem",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/fYB3KuH8P5jyoReOqbDRyHQJjfKsPj-BYDcJb1XANiEpo6bhCf6LXpsNxE9_fvefub9S1hCkldU=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UC0C-w0YjGpqDXGB8IHb662A",
+      "name": "Ed Sheeran",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/pZQ5JMD4EOI8TcNYAPTzMexe_fC0CKnb_hYlV4rPfIzmDidF239fH1XKmzkeT30XSg7fxNwc_w=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCZuPJZ2kGFdlbQu1qotZaHw",
+      "name": "Karol G",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/LzXnsCnbbJGyaqDUwDWbgCNus4XJ02kG8Tw2CNeoD0P5i8Enji4CDFpF2TCJpxwIGs_HvOZD=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UC9CoOnJkIBMdeijd9qYoT_g",
+      "name": "Ariana Grande",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/hK5f1t-mCu2WrNg3WPSrS5rySMl-wT0z3wNZuIWvC3gPtM4glWNszP0LthUxBcZVxgWVs6rq=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCiGm_E4ZwYSHV3bcW1pnSeQ",
+      "name": "Billie Eilish",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/dirvtoDAmx-u0UR76-pxfhYL6Wxj2vfL2geUcxDwk62tTWWhGG6QDGc63RG3NdOz38-yBwRHDQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCzpl23pGTHVYqvKsgY0A-_w",
+      "name": "Doja Cat",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/oO7HPiWp3RytTNMhQDFPIqoVKMRmjopAyY9GSmtvxuIUPI13DuLJ6AbLK4paGIz8eEoQ0lKKiw=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCPKWE1H6xhxwPlqUlKgHb_w",
+      "name": "Sabrina Carpenter",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/KgFH3zHZEmjN6tPMRBTrc1kBAHPajOGgw5tQbh-rNJnLyoabg7CCxcGdLjBOhaBxGZtRz-Z5=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCTKTRVaWrythRIGNfZYBp2A",
+      "name": "Chappell Roan",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/lA8HyeqH8ZqFQAlHAWO2hDJASCRwYBd15fBexrtH78pzTEk4IGJefCS87ROdyHaRCMQN32fX5w=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCoUM-UJ7rirJYP8CQ0EIaHA",
+      "name": "Bruno Mars",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/dxwzp4IYsNJKDcwNYgF0UGdw9vCWSMqkHaLtC08VVKg8eybNs69pbdTaGdoaKQYHVQjFyeybzA=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UC-J-KZfRV8c13fOCkhXdLiQ",
+      "name": "Dua Lipa",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/c3upBFWLu55hnBvqncQS9ZEF_hkvHsNTQiB7m7ZYYavLFMzfyn9Bwo-1VF4HSPGo3G2EdwGtgWg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCy3zgWom-5AGypGX_FVTKpg",
+      "name": "Olivia Rodrigo",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/41-4WZupE4yY88igineZefzBZ3ud2nrtlBMv61OBWOfOcATol8PhmI5OZ0fLlrTszyZ3Ul9I9sE=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCeLHszkByNZtPKcaVXOCOQQ",
+      "name": "Post Malone",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/hhANGxHetD6zrJJYLW230Ke7f_lDITYy5-RMgabX66S9Jc7WOaobXKEGHrld5Hzzqku6X9cqBtQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCWY9g9jNYh6AS-E8-SKfBmA",
+      "name": "Travis Scott",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_mJwV7NbYXhpSUQ5UZ1wC4CvSZxs_wHM8W91CigRlooxA=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCO5IQ70V7l-XpHW40HwaGsw",
+      "name": "SZA",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/yLBjfGExL_iEyNmOd5VjEVt6tQWg8Upr1mpafHQfsv-MU3875DnCI74VsslG0lZtiGjg0lf1wTk=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UC3lBXcrKFnFAFkfVk5WuKcQ",
+      "name": "Kendrick Lamar",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/j1szYhuen1uT1D1icpjxHMFyBc0xINWK1eMtSzrB0TL5jliB7t3JB_wJ6UA9twV7VelxpKEc=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCoCxMxKtkQgxk0oPDCmwfwQ",
+      "name": "Tyla",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_kGSUzdw_a1LYkaT34qotT0ejhgcEoWd9Sm_LTjzalVc6Y=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCDPM_n1atn2ijUwHd0NNRQw",
+      "name": "Coldplay",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/vWWn3HO1emNl2iGb08UuY4q_OtqXwUUWJMjMDr6bBPpuCBoWg-dE_Gu-yoMQNrBqb2gMzA3wLQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCZFWPqqPkFlNwIxcpsLOwew",
+      "name": "Harry Styles",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/5usoFgT5xODh7nk1EqG_O8_oCCtuaAHWXFxT3QecDMcmixvHzFRb-6YWp0nHeLqquJB4KnEavg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UC6G2vAJrt407lwiynW116Eg",
+      "name": "The Kid LAROI",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/7q-PLDAfJp0ypdFntQzo_j4CI1syai6lGrjGr1y_WoAbxaPP5fNkCgz6ZbeewAVJQdHKmOsV8w=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UC4Qq03WOIpex4n9jZrV9PTQ",
+      "name": "Rema",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_kfYvEXZq6JZMLSL-Si0OrA5ROaF8hNwskl4vC8d8jZSg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCEzDdNqNkT-7rSfSGSr1hWg",
+      "name": "Burna Boy",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/R_lx2cAcDqU--oWopjcHFF-dffPRq2j_A4QPoTauqL8X-j24B6Av_RmoTsLCGHNC-iWhRf0yTQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCqjjyPUghDSSKFBABM_CXMw",
+      "name": "Anitta",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/WHAM1UynTS7c5XcDJ0T5lPzbivLi-53dSdRoCRO6reCLzElMDgBUp7GruXIgYpaS_Atzbxe97g=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCJTqwQj5iTHYrko04PbGI9w",
+      "name": "Ice Spice",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/cUT2p0lAa1hMncQwz0G7lHJfbEIvQ9rnkyMIzrn-wV6l-dZ0S270y3Ta5C26ZfPc7Zl_wb1zaQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCmU3DZhJ08_W6hh7Pf3zurw",
+      "name": "Charli XCX",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_mG3Z-n-Wq-T6HQ5TXn4lePamwAzegNnImiABYAuXY=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCNL1ZadSjHpjm4q9j2sVtOA",
+      "name": "Lady Gaga",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/lM8HHBd5BZtP_-Dh1i3n1Z4teVW8v2KTG-hsS83yXUiK0K6krkk1XNEFbho3uwH-CS-FQpnlHw=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCcgqSM4YEo5vVQpqwN-MaNw",
+      "name": "Rihanna",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/qMCGjRaKKRar82KzcIWdUoLbJ03aW2K2sEf-m4GaB7JwLshoHOZHvkxLRXsZVgpKvqCXVhKCWg=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCuHzBCaKmtaLcRAOoazhCPA",
+      "name": "Beyoncé",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/4UxYRy4fJ0Fo54TRPkw19_W6uCCnzTBSkzm75vGIiEObg4IgY5Ie1BIsNcflFNqofAjxEpTRcQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    }
+  ]
+}
