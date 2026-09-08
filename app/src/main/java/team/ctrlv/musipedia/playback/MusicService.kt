@@ -52,6 +52,8 @@ class MusicService : MediaSessionService() {
         private set
     private var sleepJob: Job? = null
     private var startedAsService = false
+    lateinit var equalizer: EqualizerEngine
+        private set
 
     inner class MusicBinder : Binder() {
         val service: MusicService get() = this@MusicService
@@ -59,7 +61,9 @@ class MusicService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        recentStore = (application as MusiumApplication).recentStore
+        val app = application as MusiumApplication
+        recentStore = app.recentStore
+        equalizer = EqualizerEngine(app.equalizerStore)
         val playHttp = StreamResolver.http.newBuilder()
             .addInterceptor { chain ->
                 val incoming = chain.request()
@@ -146,6 +150,10 @@ class MusicService : MediaSessionService() {
                 postPlaybackNotification()
             }
 
+            override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                equalizer.attach(audioSessionId)
+            }
+
             override fun onPlayerError(error: PlaybackException) {
                 val song = currentSong()
                 PlayLog.e(
@@ -193,6 +201,7 @@ class MusicService : MediaSessionService() {
             .setSessionActivity(launch)
             .setBitmapLoader(CacheBitmapLoader(DataSourceBitmapLoader(this)))
             .build()
+        equalizer.attach(player.audioSessionId)
         setShowNotificationForIdlePlayer(SHOW_NOTIFICATION_FOR_IDLE_PLAYER_NEVER)
         setListener(object : Listener {
             override fun onForegroundServiceStartNotAllowedException() {
@@ -290,6 +299,22 @@ class MusicService : MediaSessionService() {
         player.removeMediaItem(index)
     }
 
+    /** Swap the currently playing item without clearing the rest of the queue. */
+    fun replaceCurrent(song: PlayableSong) {
+        val index = player.currentMediaItemIndex
+        if (index < 0 || player.mediaItemCount == 0) {
+            playQueue(listOf(song), 0)
+            return
+        }
+        val prepared = OfflineDownloads.attachAll(listOf(song)).first()
+        player.replaceMediaItem(index, prepared.toMediaItem())
+        player.seekTo(index, 0L)
+        player.prepare()
+        player.play()
+        recentStore.add(prepared)
+        postPlaybackNotification()
+    }
+
     fun setSleepMinutes(minutes: Int) {
         sleepUntilTrackEnd = false
         sleepEndsAtMs = System.currentTimeMillis() + minutes.coerceAtLeast(1) * 60_000L
@@ -377,6 +402,7 @@ class MusicService : MediaSessionService() {
     override fun onDestroy() {
         clearListener()
         scope.cancel()
+        equalizer.release()
         session?.release()
         player.release()
         super.onDestroy()

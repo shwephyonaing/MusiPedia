@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 internal const val MissingFavoriteArtistMessage =
-    "Cannot find your Favorite Artist? Please let us know. We will added this very soom."
+    "Cannot find your favorite artist? Please let us know. We will add them very soon. Click here to Email us."
 
 internal fun Context.openFavoriteArtistRequestEmail(artistQuery: String = "") {
     val subject = Uri.encode("MusiPedia Artist Request")

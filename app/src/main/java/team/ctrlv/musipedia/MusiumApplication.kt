@@ -18,6 +18,8 @@ class MusiumApplication : Application() {
         private set
     lateinit var tasteCatalogStore: TasteCatalogStore
         private set
+    lateinit var equalizerStore: EqualizerStore
+        private set
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     override fun onCreate() {
@@ -27,6 +29,7 @@ class MusiumApplication : Application() {
         favoriteStore = FavoriteStore(this)
         tasteStore = TasteStore(this)
         tasteCatalogStore = TasteCatalogStore(this)
+        equalizerStore = EqualizerStore(this)
         OfflineDownloads.initialize(downloadStore, appScope, this)
         StreamResolver.initialize()
         InnertubeSession.init(this)

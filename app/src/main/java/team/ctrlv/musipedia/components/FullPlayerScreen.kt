@@ -34,10 +34,13 @@ import androidx.compose.material.icons.automirrored.outlined.QueueMusic
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.DownloadDone
+import androidx.compose.material.icons.outlined.Equalizer
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Lyrics
+import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.MicOff
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Pause
@@ -117,6 +120,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     var lyricsOn by remember(song.id) { mutableStateOf(false) }
     var showQueue by remember { mutableStateOf(false) }
     var showSleep by remember { mutableStateOf(false) }
+    var showEqualizer by remember { mutableStateOf(false) }
     var showRingtone by remember { mutableStateOf(false) }
     var showActions by remember { mutableStateOf(false) }
     var openingArtist by remember { mutableStateOf(false) }
@@ -174,7 +178,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
         }.getOrNull()
     }
     val duration = player.duration.coerceAtLeast(1L)
-    val sheetOpen = showQueue || showSleep || showRingtone
+    val sheetOpen = showQueue || showSleep || showEqualizer || showRingtone
     Box(
         Modifier
             .fillMaxSize()
@@ -230,15 +234,44 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
             ) {
                 Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = Ink, modifier = Modifier.size(28.dp))
             }
-            if (player.sleepActive) {
-                Text(
-                    if (player.sleepEndOfTrack) "Sleep" else formatTime(player.sleepRemaining),
-                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = .88f), RoundedCornerShape(14.dp)).padding(horizontal = 10.dp, vertical = 5.dp),
-                    color = Cyan,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                )
+            if (player.sleepActive || player.karaokeActive || player.karaokeLoading) {
+                Row(
+                    Modifier.align(Alignment.TopEnd).padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (player.karaokeLoading) {
+                        Text(
+                            "Karaoke…",
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.surface.copy(alpha = .88f), RoundedCornerShape(14.dp))
+                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                            color = Cyan,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    } else if (player.karaokeActive) {
+                        Text(
+                            "Karaoke",
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.surface.copy(alpha = .88f), RoundedCornerShape(14.dp))
+                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                            color = Cyan,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    if (player.sleepActive) {
+                        Text(
+                            if (player.sleepEndOfTrack) "Sleep" else formatTime(player.sleepRemaining),
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.surface.copy(alpha = .88f), RoundedCornerShape(14.dp))
+                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                            color = Cyan,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
             }
             }
         }
@@ -389,6 +422,50 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                     HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
                     DropdownMenuItem(
                         modifier = Modifier.height(44.dp),
+                        text = { Text("Equalizer", color = Ink, fontSize = 12.sp) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Outlined.Equalizer,
+                                null,
+                                tint = Color(0xFF8B9490),
+                                modifier = Modifier.size(20.dp),
+                            )
+                        },
+                        contentPadding = PaddingValues(horizontal = 13.dp),
+                        onClick = { showActions = false; showEqualizer = true },
+                    )
+                    HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
+                    DropdownMenuItem(
+                        modifier = Modifier.height(44.dp),
+                        text = {
+                            Text(
+                                when {
+                                    player.karaokeLoading -> "Finding karaoke…"
+                                    player.karaokeActive -> "Exit karaoke"
+                                    else -> "Karaoke"
+                                },
+                                color = Ink,
+                                fontSize = 12.sp,
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                if (player.karaokeActive) Icons.Outlined.MicOff else Icons.Outlined.Mic,
+                                null,
+                                tint = Color(0xFF8B9490),
+                                modifier = Modifier.size(20.dp),
+                            )
+                        },
+                        contentPadding = PaddingValues(horizontal = 13.dp),
+                        enabled = !player.karaokeLoading && !song.isLocal,
+                        onClick = {
+                            showActions = false
+                            player.toggleKaraoke()
+                        },
+                    )
+                    HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
+                    DropdownMenuItem(
+                        modifier = Modifier.height(44.dp),
                         text = { Text("Set ringtone", color = Ink, fontSize = 12.sp) },
                         leadingIcon = {
                             Icon(
@@ -422,6 +499,9 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
         )
         player.lastError?.let { error ->
             Text(error, Modifier.padding(top = 8.dp), color = Color(0xFFFF8A80), fontSize = 12.sp, maxLines = 3)
+        }
+        player.karaokeMessage?.let { message ->
+            Text(message, Modifier.padding(top = 8.dp), color = Color(0xFFFF8A80), fontSize = 12.sp, maxLines = 2)
         }
         OfflineDownloads.lastError?.let { error ->
             Text(error, Modifier.padding(top = 8.dp), color = Color(0xFFFF8A80), fontSize = 12.sp, maxLines = 3)
@@ -483,6 +563,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     }
     if (showQueue) QueueSheet(player) { showQueue = false }
     if (showSleep) SleepTimerSheet(player) { showSleep = false }
+    if (showEqualizer) EqualizerSheet(player) { showEqualizer = false }
     if (showRingtone) {
         RingtoneSheet(
             song = song,

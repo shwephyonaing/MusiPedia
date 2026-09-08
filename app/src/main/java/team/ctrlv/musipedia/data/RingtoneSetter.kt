@@ -14,14 +14,48 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.provider.Settings
+import android.telecom.PhoneAccountHandle
+import android.telecom.TelecomManager
+import android.telephony.SubscriptionManager
 import java.io.File
 import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 
+enum class RingtoneSoundTarget(
+    val label: String,
+    val detail: String,
+) {
+    PhoneSim1(
+        label = "Phone ringtone · SIM 1",
+        detail = "Incoming calls on the first SIM",
+    ),
+    PhoneSim2(
+        label = "Phone ringtone · SIM 2",
+        detail = "Incoming calls on the second SIM (dual-SIM phones)",
+    ),
+    Alarm(
+        label = "Alarm",
+        detail = "Clock / alarm sound",
+    ),
+}
+
+data class RingtoneApplyResult(
+    val uri: Uri,
+    val applied: List<String>,
+    val skipped: List<String>,
+)
+
 object RingtoneSetter {
     const val MIN_CLIP_MS = 5_000L
-    const val MAX_CLIP_MS = 40_000L
+    const val MAX_CLIP_MS = 30_000L
     const val DEFAULT_CLIP_MS = 30_000L
+
+    private val Sim2SettingKeys = listOf(
+        "ringtone_2",
+        "ringtone_sim2",
+        "ringtone_slot_2",
+        "ringtone_sim_2",
+    )
 
     fun canWriteSettings(context: Context): Boolean =
         Settings.System.canWrite(context.applicationContext)
@@ -59,14 +93,27 @@ object RingtoneSetter {
         }
     }
 
+    /** Best-effort active SIM count for UI hints (1 if unknown). */
+    fun activeSimCount(context: Context): Int {
+        val accounts = phoneAccountsBySlot(context)
+        if (accounts.size >= 2) return accounts.size
+        val sm = context.getSystemService(SubscriptionManager::class.java) ?: return 1
+        return runCatching {
+            if (Build.VERSION.SDK_INT >= 30) sm.activeSubscriptionInfoCount
+            else @Suppress("DEPRECATION") sm.activeSubscriptionInfoCount
+        }.getOrNull()?.coerceAtLeast(1) ?: 1
+    }
+
     fun setAsRingtone(
         context: Context,
         song: PlayableSong,
         startMs: Long,
         endMs: Long,
-    ): Result<Uri> = runCatching {
+        targets: Set<RingtoneSoundTarget> = setOf(RingtoneSoundTarget.PhoneSim1),
+    ): Result<RingtoneApplyResult> = runCatching {
         val app = context.applicationContext
         if (!canWriteSettings(app)) error("Allow MusiPedia to change system settings")
+        if (targets.isEmpty()) error("Choose at least one sound type")
         val source = localFile(song) ?: error("Download this song first")
         val clipStart = startMs.coerceAtLeast(0L)
         val clipEnd = endMs.coerceAtLeast(clipStart + 1L)
@@ -76,13 +123,132 @@ object RingtoneSetter {
 
         val cacheDir = File(app.cacheDir, "ringtones").apply { mkdirs() }
         val clipped = clipAudio(source, cacheDir, song.id, clipStart, clipEnd)
-        val uri = publishRingtone(app, song, clipped)
-        RingtoneManager.setActualDefaultRingtoneUri(app, RingtoneManager.TYPE_RINGTONE, uri)
+        val uri = publishRingtone(
+            app,
+            song,
+            clipped,
+            forPhone = targets.any {
+                it == RingtoneSoundTarget.PhoneSim1 || it == RingtoneSoundTarget.PhoneSim2
+            },
+            forAlarm = RingtoneSoundTarget.Alarm in targets,
+        )
         clipped.delete()
-        uri
+
+        val applied = mutableListOf<String>()
+        val skipped = mutableListOf<String>()
+        targets.forEach { target ->
+            val outcome = runCatching { applyTarget(app, uri, target) }
+            if (outcome.isSuccess) applied += target.label
+            else skipped += "${target.label}: ${outcome.exceptionOrNull()?.message ?: "unsupported"}"
+        }
+        if (applied.isEmpty()) {
+            error(skipped.joinToString("\n").ifBlank { "Could not apply any sound type" })
+        }
+        RingtoneApplyResult(uri = uri, applied = applied, skipped = skipped)
     }
 
-    private data class ClipResult(val file: File, val mime: String)
+    private fun applyTarget(context: Context, uri: Uri, target: RingtoneSoundTarget) {
+        when (target) {
+            RingtoneSoundTarget.PhoneSim1 -> applyPhoneSlot(context, uri, slotIndex = 0)
+            RingtoneSoundTarget.PhoneSim2 -> applyPhoneSlot(context, uri, slotIndex = 1)
+            RingtoneSoundTarget.Alarm -> {
+                RingtoneManager.setActualDefaultRingtoneUri(
+                    context,
+                    RingtoneManager.TYPE_ALARM,
+                    uri,
+                )
+                runCatching {
+                    Settings.System.putString(
+                        context.contentResolver,
+                        Settings.System.ALARM_ALERT,
+                        uri.toString(),
+                    )
+                }
+            }
+        }
+    }
+
+    private fun applyPhoneSlot(context: Context, uri: Uri, slotIndex: Int) {
+        val accounts = phoneAccountsBySlot(context)
+        if (slotIndex == 0) {
+            RingtoneManager.setActualDefaultRingtoneUri(
+                context,
+                RingtoneManager.TYPE_RINGTONE,
+                uri,
+            )
+            runCatching {
+                Settings.System.putString(
+                    context.contentResolver,
+                    Settings.System.RINGTONE,
+                    uri.toString(),
+                )
+            }
+            accounts.getOrNull(0)?.let { handle ->
+                setRingtoneForPhoneAccount(context, uri, handle)
+            }
+            return
+        }
+
+        // SIM 2: prefer PhoneAccountHandle API, then OEM Settings keys.
+        val handle = accounts.getOrNull(1)
+        if (handle != null) {
+            setRingtoneForPhoneAccount(context, uri, handle)
+            return
+        }
+        var wrote = false
+        for (key in Sim2SettingKeys) {
+            val ok = runCatching {
+                Settings.System.putString(context.contentResolver, key, uri.toString())
+            }.getOrDefault(false)
+            if (ok) wrote = true
+        }
+        if (!wrote) {
+            error("SIM 2 ringtone is not available on this device")
+        }
+    }
+
+    private fun setRingtoneForPhoneAccount(
+        context: Context,
+        uri: Uri,
+        handle: PhoneAccountHandle,
+    ) {
+        // Prefer OEM / newer RingtoneManager APIs that target a PhoneAccountHandle.
+        val byHandle = runCatching {
+            RingtoneManager::class.java.getMethod(
+                "setRingtoneUri",
+                Context::class.java,
+                Uri::class.java,
+                PhoneAccountHandle::class.java,
+            ).invoke(null, context, uri, handle)
+            Unit
+        }.recoverCatching {
+            RingtoneManager::class.java.getMethod(
+                "setActualDefaultRingtoneUriForPhoneAccountHandle",
+                Context::class.java,
+                Int::class.javaPrimitiveType,
+                Uri::class.java,
+                PhoneAccountHandle::class.java,
+            ).invoke(null, context, RingtoneManager.TYPE_RINGTONE, uri, handle)
+            Unit
+        }
+        byHandle.getOrThrow()
+    }
+
+    private fun phoneAccountsBySlot(context: Context): List<PhoneAccountHandle> {
+        val telecom = context.getSystemService(TelecomManager::class.java) ?: return emptyList()
+        val accounts = runCatching { telecom.callCapablePhoneAccounts }.getOrDefault(emptyList())
+        if (accounts.isEmpty()) return emptyList()
+        val sm = context.getSystemService(SubscriptionManager::class.java)
+        val subs = runCatching { sm?.activeSubscriptionInfoList }.getOrNull().orEmpty()
+        if (subs.isEmpty()) return accounts
+        return accounts.sortedBy { handle ->
+            val id = handle.id
+            subs.firstOrNull { sub ->
+                id.contains(sub.subscriptionId.toString()) ||
+                    (!sub.iccId.isNullOrBlank() && id.contains(sub.iccId!!))
+            }?.simSlotIndex ?: Int.MAX_VALUE
+        }
+    }
 
     private fun clipAudio(
         source: File,
@@ -125,7 +291,13 @@ object RingtoneSetter {
         return dest
     }
 
-    private fun publishRingtone(context: Context, song: PlayableSong, file: File): Uri {
+    private fun publishRingtone(
+        context: Context,
+        song: PlayableSong,
+        file: File,
+        forPhone: Boolean,
+        forAlarm: Boolean,
+    ): Uri {
         val webm = file.extension.equals("webm", ignoreCase = true)
         val mime = if (webm) "audio/webm" else "audio/mp4"
         val displayName =
@@ -135,9 +307,9 @@ object RingtoneSetter {
             put(MediaStore.Audio.Media.DISPLAY_NAME, displayName)
             put(MediaStore.Audio.Media.TITLE, song.title.ifBlank { "MusiPedia ringtone" })
             put(MediaStore.Audio.Media.MIME_TYPE, mime)
-            put(MediaStore.Audio.Media.IS_RINGTONE, true)
+            put(MediaStore.Audio.Media.IS_RINGTONE, forPhone)
             put(MediaStore.Audio.Media.IS_NOTIFICATION, false)
-            put(MediaStore.Audio.Media.IS_ALARM, false)
+            put(MediaStore.Audio.Media.IS_ALARM, forAlarm)
             put(MediaStore.Audio.Media.IS_MUSIC, false)
             if (Build.VERSION.SDK_INT >= 29) {
                 put(MediaStore.Audio.Media.RELATIVE_PATH, Environment.DIRECTORY_RINGTONES + "/MusiPedia")

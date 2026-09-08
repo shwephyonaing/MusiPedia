@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
@@ -31,6 +33,10 @@ import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -365,4 +371,158 @@ internal fun SleepTimerSheet(player: PlayerConnection, onDismiss: () -> Unit) {
             }
         }
     }
+}
+
+@Composable
+internal fun EqualizerSheet(player: PlayerConnection, onDismiss: () -> Unit) {
+    val state = player.equalizerState
+    val presets = remember {
+        EqPreset.entries.filter { it != EqPreset.CUSTOM }
+    }
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    val chipIdle = MaterialTheme.colorScheme.surfaceVariant
+    val trackIdle = MaterialTheme.colorScheme.outlineVariant
+    val trackDisabled = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+    PlayerOverlaySheet(onDismiss = onDismiss, heightFraction = 0.72f) {
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text("Equalizer", color = SheetInk, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Switch(
+                    checked = state.enabled,
+                    onCheckedChange = player::setEqualizerEnabled,
+                    enabled = state.available,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = Cyan,
+                        uncheckedThumbColor = Color.White,
+                        uncheckedTrackColor = trackIdle,
+                        disabledUncheckedTrackColor = trackDisabled,
+                    ),
+                )
+            }
+            if (!state.available) {
+                Text(
+                    "Equalizer unavailable on this device right now. Start playback and try again.",
+                    Modifier.padding(top = 8.dp, bottom = 12.dp),
+                    muted,
+                    13.sp,
+                )
+                return@Column
+            }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(top = 8.dp, bottom = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                presets.forEach { preset ->
+                    val active = state.presetId == preset.id
+                    Text(
+                        preset.label,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(if (active) Cyan.copy(alpha = 0.18f) else chipIdle)
+                            .clickable(enabled = state.enabled) {
+                                player.applyEqualizerPreset(preset)
+                            }
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                        color = if (active) Cyan else SheetInk,
+                        fontSize = 13.sp,
+                        fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+                    )
+                }
+                if (state.presetId == EqPreset.CUSTOM.id) {
+                    Text(
+                        "Custom",
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Cyan.copy(alpha = 0.18f))
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                        color = Cyan,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .height(190.dp)
+                    .padding(top = 12.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                state.bands.forEach { band ->
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Box(
+                            Modifier
+                                .height(150.dp)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Slider(
+                                value = band.level,
+                                onValueChange = { player.setEqualizerBand(band.index, it) },
+                                valueRange = -1f..1f,
+                                enabled = state.enabled,
+                                modifier = Modifier
+                                    .graphicsLayer { rotationZ = -90f }
+                                    .width(150.dp),
+                                colors = SliderDefaults.colors(
+                                    thumbColor = Cyan,
+                                    activeTrackColor = Cyan,
+                                    inactiveTrackColor = trackIdle,
+                                    disabledThumbColor = muted,
+                                    disabledActiveTrackColor = muted,
+                                    disabledInactiveTrackColor = trackDisabled,
+                                ),
+                            )
+                        }
+                        Text(
+                            formatEqHz(band.centerHz),
+                            color = muted,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
+                }
+            }
+            if (state.bassAvailable) {
+                Text(
+                    "Bass boost",
+                    Modifier.padding(top = 16.dp),
+                    SheetInk,
+                    14.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Slider(
+                    value = state.bassStrength.toFloat(),
+                    onValueChange = { player.setBassBoost(it.toInt()) },
+                    valueRange = 0f..1000f,
+                    enabled = state.enabled,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Cyan,
+                        activeTrackColor = Cyan,
+                        inactiveTrackColor = trackIdle,
+                        disabledThumbColor = muted,
+                        disabledActiveTrackColor = muted,
+                        disabledInactiveTrackColor = trackDisabled,
+                    ),
+                )
+            }
+        }
+    }
+}
+
+private fun formatEqHz(hz: Int): String = when {
+    hz >= 1000 -> "${hz / 1000}k"
+    else -> "$hz"
 }

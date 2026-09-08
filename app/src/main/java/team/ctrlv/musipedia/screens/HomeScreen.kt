@@ -249,7 +249,7 @@ internal fun HomeContent() {
             item { PosterRow(trending, placeholders = 10) { item -> item.open(player, router) } }
             if (tasteArtists.isNotEmpty()) {
                 item {
-                    SectionTitle("Listen More from Your Fav Artists", Modifier.padding(top = 22.dp))
+                    SectionTitle("More from Your Fav Artists", Modifier.padding(top = 22.dp))
                 }
                 item {
                     FavArtistProfilesRow(

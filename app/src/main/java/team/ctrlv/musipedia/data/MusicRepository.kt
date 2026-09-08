@@ -167,6 +167,38 @@ object MusicRepository {
             .filter { it.id != videoId }
     }
 
+    /**
+     * Find a karaoke / instrumental upload for [song].
+     * Prefers titles that explicitly say karaoke, instrumental, or no vocals.
+     */
+    suspend fun findKaraoke(song: PlayableSong): PlayableSong? = withContext(Dispatchers.IO) {
+        if (song.isLocal || song.id.isBlank()) return@withContext null
+        val title = karaokeSearchTitle(song.title)
+        if (title.isBlank()) return@withContext null
+        val artist = song.artist.trim().takeIf { it.isNotBlank() && !it.equals("YouTube Music", true) }.orEmpty()
+        val queries = buildList {
+            if (artist.isNotBlank()) add("$title $artist karaoke")
+            add("$title karaoke")
+            if (artist.isNotBlank()) add("$title $artist instrumental")
+            add("$title instrumental")
+            add("$title karaoke version")
+        }
+        val seen = LinkedHashSet<String>()
+        var best: Pair<Int, SongItem>? = null
+        for (query in queries) {
+            val hits = runCatching { client.search(query).songs }.getOrDefault(emptyList())
+            for (hit in hits) {
+                if (hit.id == song.id || !seen.add(hit.id)) continue
+                val score = karaokeScore(hit, title, artist)
+                if (score >= 40 && (best == null || score > best!!.first)) {
+                    best = score to hit
+                }
+            }
+            if (best != null && best!!.first >= 70) break
+        }
+        best?.second?.toPlayable()
+    }
+
     /** Resolve the real YouTube uploader channel for a playing video (not a name search). */
     suspend fun videoUploader(videoId: String): team.ctrlv.musipedia.innertube.VideoUploader? =
         withContext(Dispatchers.IO) {
@@ -331,6 +363,47 @@ private fun tasteAgeScore(subtitle: String?): Int {
 }
 
 private fun List<HomeSection>.hasContent(): Boolean = any { it.items.isNotEmpty() }
+
+private val KaraokeHint = Regex(
+    """(?i)(\bkaraoke\b|\binstrumental\b|\bno vocals?\b|\bminus[- ]?one\b|\bbacking track\b|""" +
+        """\bsing[- ]?along\b|\binstrumental version\b|\bkaraoke version\b)""",
+)
+private val KaraokeNoise = Regex(
+    """(?i)(\blyrics?\b|\bofficial (audio|music|video|mv)\b|\bmusic video\b|\blive performance\b|""" +
+        """\breaction\b|\bcover dance\b|\btutorial\b)""",
+)
+private val KaraokeParen = Regex("""\([^)]*\)|\[[^\]]*\]""")
+private val KaraokeJunk = Regex("""[^\p{L}\p{N}\s]+""")
+
+private fun karaokeSearchTitle(title: String): String {
+    return title
+        .replace(KaraokeParen, " ")
+        .replace(KaraokeJunk, " ")
+        .replace(Regex("\\s+"), " ")
+        .trim()
+}
+
+/** Higher is better. Require karaoke-ish wording; prefer title match + karaoke marker. */
+private fun karaokeScore(hit: SongItem, cleanTitle: String, artist: String): Int {
+    val hay = "${hit.title} ${hit.subtitle.orEmpty()}"
+    if (!KaraokeHint.containsMatchIn(hay)) return 0
+    var score = 40
+    if (Regex("""(?i)\bkaraoke\b""").containsMatchIn(hay)) score += 25
+    if (Regex("""(?i)\binstrumental\b""").containsMatchIn(hay)) score += 18
+    if (Regex("""(?i)(no vocals?|minus[- ]?one)""").containsMatchIn(hay)) score += 20
+    if (KaraokeNoise.containsMatchIn(hay) && !KaraokeHint.containsMatchIn(hit.title)) score -= 25
+    val normalizedHit = karaokeSearchTitle(hit.title).lowercase()
+    val needle = cleanTitle.lowercase()
+    when {
+        normalizedHit == needle -> score += 30
+        normalizedHit.startsWith(needle) || needle.startsWith(normalizedHit) -> score += 20
+        normalizedHit.contains(needle) || needle.split(' ').all { it.length < 2 || normalizedHit.contains(it) } ->
+            score += 12
+        else -> score -= 20
+    }
+    if (artist.isNotBlank() && hay.contains(artist, ignoreCase = true)) score += 10
+    return score
+}
 
 private fun PlayableSong.toSongItem() = SongItem(
     id = id,
