@@ -39,6 +39,24 @@ class TasteStore(context: Context) {
     }
 
     @Synchronized
+    fun contains(id: String): Boolean = artists().any { it.id == id }
+
+    /** Returns true when the artist is now favorited. */
+    @Synchronized
+    fun toggle(artist: TasteArtist): Boolean {
+        val existing = artists()
+        val adding = existing.none { it.id == artist.id }
+        save(
+            if (adding) {
+                listOf(artist) + existing.filterNot { it.id == artist.id }
+            } else {
+                existing.filterNot { it.id == artist.id }
+            },
+        )
+        return adding
+    }
+
+    @Synchronized
     fun save(artists: List<TasteArtist>) {
         artistCache = artists
         val artistArray = JSONArray()

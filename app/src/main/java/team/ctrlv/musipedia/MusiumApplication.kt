@@ -30,6 +30,7 @@ class MusiumApplication : Application() {
         tasteStore = TasteStore(this)
         tasteCatalogStore = TasteCatalogStore(this)
         equalizerStore = EqualizerStore(this)
+        MusicRepository.bindVerifiedCatalog { tasteCatalogStore.snapshot() }
         OfflineDownloads.initialize(downloadStore, appScope, this)
         StreamResolver.initialize()
         InnertubeSession.init(this)

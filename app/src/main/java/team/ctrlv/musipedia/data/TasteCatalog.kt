@@ -37,6 +37,21 @@ class TasteCatalogStore(context: Context) {
 
     fun snapshot(): List<TasteArtist> = _artists.value
 
+    fun isVerified(channelId: String?): Boolean {
+        val id = channelId?.takeIf { it.startsWith("UC") } ?: return false
+        return _artists.value.any { it.id == id }
+    }
+
+    fun matching(query: String): List<TasteArtist> {
+        val q = query.trim().lowercase()
+        if (q.isEmpty()) return emptyList()
+        return _artists.value.filter { artist ->
+            artist.name.lowercase().contains(q) ||
+                q.contains(artist.name.lowercase()) ||
+                artist.id.equals(query.trim(), ignoreCase = true)
+        }
+    }
+
     /**
      * Refresh from GitHub when stale (or [force]). Never clears the current list on failure.
      */

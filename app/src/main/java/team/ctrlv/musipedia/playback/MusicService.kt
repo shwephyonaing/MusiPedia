@@ -299,22 +299,6 @@ class MusicService : MediaSessionService() {
         player.removeMediaItem(index)
     }
 
-    /** Swap the currently playing item without clearing the rest of the queue. */
-    fun replaceCurrent(song: PlayableSong) {
-        val index = player.currentMediaItemIndex
-        if (index < 0 || player.mediaItemCount == 0) {
-            playQueue(listOf(song), 0)
-            return
-        }
-        val prepared = OfflineDownloads.attachAll(listOf(song)).first()
-        player.replaceMediaItem(index, prepared.toMediaItem())
-        player.seekTo(index, 0L)
-        player.prepare()
-        player.play()
-        recentStore.add(prepared)
-        postPlaybackNotification()
-    }
-
     fun setSleepMinutes(minutes: Int) {
         sleepUntilTrackEnd = false
         sleepEndsAtMs = System.currentTimeMillis() + minutes.coerceAtLeast(1) * 60_000L

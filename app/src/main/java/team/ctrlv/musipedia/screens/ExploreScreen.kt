@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.automirrored.outlined.PlaylistAdd
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
@@ -68,6 +69,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import team.ctrlv.musipedia.innertube.ArtistItem
 import team.ctrlv.musipedia.innertube.SearchPage
 import team.ctrlv.musipedia.innertube.SongItem
 import team.ctrlv.musipedia.innertube.YtItem
@@ -344,6 +346,8 @@ internal fun MusicItemRow(
     trailing: (@Composable RowScope.() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
+    val catalog = (LocalContext.current.applicationContext as? MusiumApplication)?.tasteCatalogStore
+    val verified = item is ArtistItem && catalog?.isVerified(item.id) == true
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 28.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -356,7 +360,24 @@ internal fun MusicItemRow(
             contentScale = ContentScale.Crop,
         )
         Column(Modifier.weight(1f)) {
-            Text(item.title, color = if (light) SearchInk else Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 2)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    item.title,
+                    color = if (light) SearchInk else Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (verified) {
+                    Icon(
+                        Icons.Outlined.Verified,
+                        contentDescription = "Verified artist",
+                        tint = Color(0xFF1D9BF0),
+                        modifier = Modifier.padding(start = 4.dp).size(16.dp),
+                    )
+                }
+            }
             Spacer(Modifier.height(4.dp))
             Text(
                 item.subtitle ?: item::class.simpleName.orEmpty().removeSuffix("Item"),

@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material3.Button
@@ -205,14 +207,47 @@ private fun BrowseScaffold(
                                 fontFamily = FontFamily.Serif,
                             )
                             page.subtitle?.let { Text(it, Modifier.padding(top = 6.dp), color = MutedInk, fontSize = 14.sp) }
-                            Button(
-                                onClick = { if (queue.isNotEmpty()) player?.play(queue, 0) },
-                                enabled = queue.isNotEmpty(),
-                                colors = ButtonDefaults.buttonColors(containerColor = Cyan, contentColor = Color.White),
-                                modifier = Modifier.padding(top = 16.dp),
+                            Row(
+                                Modifier.padding(top = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
-                                Icon(Icons.Outlined.PlayArrow, null)
-                                Text("Play", Modifier.padding(start = 6.dp), fontWeight = FontWeight.Bold)
+                                Button(
+                                    onClick = { if (queue.isNotEmpty()) player?.play(queue, 0) },
+                                    enabled = queue.isNotEmpty(),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Cyan, contentColor = Color.White),
+                                ) {
+                                    Icon(Icons.Outlined.PlayArrow, null)
+                                    Text("Play", Modifier.padding(start = 6.dp), fontWeight = FontWeight.Bold)
+                                }
+                                if (roundArtwork) {
+                                    val tasteStore = (context.applicationContext as? MusiumApplication)?.tasteStore
+                                    var favorited by remember(pageId) {
+                                        mutableStateOf(tasteStore?.contains(pageId) == true)
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            val store = tasteStore ?: return@IconButton
+                                            favorited = store.toggle(
+                                                TasteArtist(
+                                                    id = pageId,
+                                                    name = page.title.ifBlank { titleHint },
+                                                    thumbnailUrl = heroArtwork,
+                                                ),
+                                            )
+                                        },
+                                        modifier = Modifier.background(
+                                            MaterialTheme.colorScheme.outlineVariant,
+                                            CircleShape,
+                                        ),
+                                    ) {
+                                        Icon(
+                                            if (favorited) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
+                                            if (favorited) "Remove favorite artist" else "Add favorite artist",
+                                            tint = if (favorited) Cyan else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

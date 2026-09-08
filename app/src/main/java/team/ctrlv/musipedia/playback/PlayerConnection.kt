@@ -35,24 +35,15 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
         private set
     var equalizerState by mutableStateOf(service.equalizer.snapshot())
         private set
-    var karaokeActive by mutableStateOf(false)
-        private set
-    var karaokeLoading by mutableStateOf(false)
-        private set
-    var karaokeMessage by mutableStateOf<String?>(null)
-        private set
+
     fun release() {
         radioJob?.cancel()
-        karaokeJob?.cancel()
         sleepUiJob?.cancel()
         runCatching { service.player.removeListener(this) }
     }
 
     private var radioJob: Job? = null
-    private var karaokeJob: Job? = null
     private var sleepUiJob: Job? = null
-    private var karaokeOriginal: PlayableSong? = null
-    private var karaokeTrackId: String? = null
 
     val player: Player get() = service.player
     val sleepActive: Boolean get() = sleepEndOfTrack || sleepEndsAt > 0L
@@ -76,7 +67,6 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
 
     fun play(songs: List<PlayableSong>, index: Int = 0) {
         lastError = null
-        clearKaraokeState()
         radioJob?.cancel()
         PlayLog.d("ui play index=$index size=${songs.size} first=${songs.getOrNull(index)?.title}")
         service.playQueue(OfflineDownloads.attachAll(songs), index)
@@ -86,7 +76,6 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
     /** Play one song, then append YouTube radio / related tracks. */
     fun playSong(song: PlayableSong) {
         lastError = null
-        clearKaraokeState()
         radioJob?.cancel()
         PlayLog.d("ui playSong id=${song.id} title=${song.title}")
         service.playQueue(OfflineDownloads.attachAll(listOf(song)), 0)
@@ -134,7 +123,6 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
 
     fun playAt(index: Int) {
         lastError = null
-        clearKaraokeState()
         service.playAt(index)
     }
 
@@ -152,61 +140,6 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
     fun removeFromQueue(index: Int) {
         service.removeFromQueue(index)
         refresh()
-    }
-
-    fun toggleKaraoke() {
-        if (karaokeLoading) return
-        if (karaokeActive) {
-            exitKaraoke()
-            return
-        }
-        val song = service.currentSong() ?: return
-        if (song.isLocal) {
-            karaokeMessage = "Karaoke isn’t available for local files"
-            return
-        }
-        karaokeJob?.cancel()
-        karaokeLoading = true
-        karaokeMessage = null
-        val original = song
-        karaokeJob = service.scope.launch {
-            val found = runCatching { MusicRepository.findKaraoke(original) }.getOrNull()
-            karaokeLoading = false
-            if (found == null) {
-                karaokeMessage = "No karaoke / instrumental version found"
-                return@launch
-            }
-            if (service.currentSong()?.id != original.id) {
-                karaokeMessage = "Track changed — karaoke cancelled"
-                return@launch
-            }
-            karaokeOriginal = original
-            karaokeTrackId = found.id
-            karaokeActive = true
-            karaokeMessage = null
-            service.replaceCurrent(found)
-            refresh()
-        }
-    }
-
-    fun exitKaraoke() {
-        karaokeJob?.cancel()
-        karaokeLoading = false
-        val original = karaokeOriginal
-        clearKaraokeState()
-        if (original != null) {
-            service.replaceCurrent(original)
-            refresh()
-        }
-    }
-
-    private fun clearKaraokeState() {
-        karaokeJob?.cancel()
-        karaokeActive = false
-        karaokeLoading = false
-        karaokeOriginal = null
-        karaokeTrackId = null
-        karaokeMessage = null
     }
 
     fun setSleepMinutes(minutes: Int) {
@@ -254,13 +187,6 @@ class PlayerConnection(val service: MusicService) : Player.Listener {
     }
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-        val nextId = mediaItem?.let(PlayableSong::from)?.id
-        if (karaokeActive && nextId != null && nextId != karaokeTrackId && nextId != karaokeOriginal?.id) {
-            karaokeActive = false
-            karaokeOriginal = null
-            karaokeTrackId = null
-            karaokeMessage = null
-        }
         refresh()
     }
 

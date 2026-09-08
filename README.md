@@ -27,6 +27,11 @@ MusiPedia is a lightweight music discovery and playback app for Android. It comb
 - Repeat-one playback and sleep timer
 - Light and dark themes
 - Animated startup with Home feed preloading
+- In-player equalizer with presets and bass boost
+
+## Future plan
+
+- **Karaoke / mute vocals** — lightweight path (prefer instrumental/karaoke uploads; optional live mid/side mute as fallback). Heavier stem separation (on-device or server) is out of scope for now.
 
 ## Installation
 

@@ -39,8 +39,6 @@ import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Lyrics
-import androidx.compose.material.icons.outlined.Mic
-import androidx.compose.material.icons.outlined.MicOff
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Pause
@@ -50,6 +48,7 @@ import androidx.compose.material.icons.outlined.RepeatOne
 import androidx.compose.material.icons.outlined.SkipNext
 import androidx.compose.material.icons.outlined.SkipPrevious
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
@@ -127,8 +126,15 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     var confirmRemoveDownload by remember { mutableStateOf(false) }
     var artistPhoto by remember(song.id) { mutableStateOf<String?>(null) }
     var creatorName by remember(song.id) { mutableStateOf(song.artist) }
-    val favoriteStore = (LocalContext.current.applicationContext as? MusiumApplication)?.favoriteStore
+    var creatorChannelId by remember(song.id) { mutableStateOf(song.artistId?.takeIf { it.startsWith("UC") }) }
+    val app = LocalContext.current.applicationContext as? MusiumApplication
+    val favoriteStore = app?.favoriteStore
+    val catalogStore = app?.tasteCatalogStore
     var favorite by remember(song.id) { mutableStateOf(favoriteStore?.contains(song.id) == true) }
+    val isVerifiedArtist = catalogStore?.isVerified(creatorChannelId) == true ||
+        catalogStore?.matching(creatorName)?.any {
+            it.name.equals(creatorName, ignoreCase = true)
+        } == true
     val canOpenCreator = !song.isLocal && song.id.length == 11
     fun openCreatorProfile() {
         if (!canOpenCreator || openingArtist) return
@@ -143,6 +149,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                 ?: song.artistId?.takeIf { it.startsWith("UC") }
             val name = uploader?.name?.takeIf { it.isNotBlank() } ?: creatorName
             if (uploader?.name != null) creatorName = uploader.name
+            if (channelId != null) creatorChannelId = channelId
             val photo = when {
                 channelId != null ->
                     artistPhoto
@@ -169,10 +176,12 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     LaunchedEffect(song.id, canOpenCreator) {
         artistPhoto = null
         creatorName = song.artist
+        creatorChannelId = song.artistId?.takeIf { it.startsWith("UC") }
         if (!canOpenCreator) return@LaunchedEffect
         val uploader = runCatching { MusicRepository.videoUploader(song.id) }.getOrNull()
         val channelId = uploader?.channelId ?: song.artistId?.takeIf { it.startsWith("UC") }
         if (uploader?.name != null) creatorName = uploader.name
+        if (channelId != null) creatorChannelId = channelId
         artistPhoto = runCatching {
             MusicRepository.artistAvatar(channelId, creatorName)
         }.getOrNull()
@@ -234,44 +243,16 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
             ) {
                 Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = Ink, modifier = Modifier.size(28.dp))
             }
-            if (player.sleepActive || player.karaokeActive || player.karaokeLoading) {
-                Row(
-                    Modifier.align(Alignment.TopEnd).padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    if (player.karaokeLoading) {
-                        Text(
-                            "Karaoke…",
-                            modifier = Modifier
-                                .background(MaterialTheme.colorScheme.surface.copy(alpha = .88f), RoundedCornerShape(14.dp))
-                                .padding(horizontal = 10.dp, vertical = 5.dp),
-                            color = Cyan,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    } else if (player.karaokeActive) {
-                        Text(
-                            "Karaoke",
-                            modifier = Modifier
-                                .background(MaterialTheme.colorScheme.surface.copy(alpha = .88f), RoundedCornerShape(14.dp))
-                                .padding(horizontal = 10.dp, vertical = 5.dp),
-                            color = Cyan,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                    if (player.sleepActive) {
-                        Text(
-                            if (player.sleepEndOfTrack) "Sleep" else formatTime(player.sleepRemaining),
-                            modifier = Modifier
-                                .background(MaterialTheme.colorScheme.surface.copy(alpha = .88f), RoundedCornerShape(14.dp))
-                                .padding(horizontal = 10.dp, vertical = 5.dp),
-                            color = Cyan,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
+            if (player.sleepActive) {
+                Text(
+                    if (player.sleepEndOfTrack) "Sleep" else formatTime(player.sleepRemaining),
+                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = .88f), RoundedCornerShape(14.dp))
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                    color = Cyan,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                )
             }
             }
         }
@@ -288,6 +269,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
             )
             Box {
                 val downloading = song.id in OfflineDownloads.progressing
+                val lyricsAvailable = lyrics != null
                 IconButton(
                     onClick = {
                         if (downloading) return@IconButton
@@ -303,7 +285,16 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                             modifier = Modifier.size(22.dp),
                         )
                     } else {
-                        Icon(Icons.Outlined.MoreHoriz, "More", tint = Ink)
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Outlined.MoreHoriz, "More", tint = Ink)
+                            if (lyricsAvailable) {
+                                RedDot(
+                                    Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 2.dp, y = (-1).dp),
+                                )
+                            }
+                        }
                     }
                 }
                 DropdownMenu(
@@ -374,7 +365,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                         HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
                         DropdownMenuItem(
                             modifier = Modifier.height(44.dp),
-                            text = { Text("Creator profile", color = Ink, fontSize = 12.sp) },
+                            text = { Text("Artist profile", color = Ink, fontSize = 12.sp) },
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.Person,
@@ -391,7 +382,18 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                     if (lyrics != null) {
                         DropdownMenuItem(
                             modifier = Modifier.height(44.dp),
-                            text = { Text(if (lyricsOn) "Hide lyrics" else "Show lyrics", color = Ink, fontSize = 12.sp) },
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        if (lyricsOn) "Hide lyrics" else "Show lyrics",
+                                        color = Ink,
+                                        fontSize = 12.sp,
+                                    )
+                                    if (!lyricsOn) {
+                                        RedDot(Modifier.padding(start = 6.dp))
+                                    }
+                                }
+                            },
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.Lyrics,
@@ -437,35 +439,6 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                     HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
                     DropdownMenuItem(
                         modifier = Modifier.height(44.dp),
-                        text = {
-                            Text(
-                                when {
-                                    player.karaokeLoading -> "Finding karaoke…"
-                                    player.karaokeActive -> "Exit karaoke"
-                                    else -> "Karaoke"
-                                },
-                                color = Ink,
-                                fontSize = 12.sp,
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                if (player.karaokeActive) Icons.Outlined.MicOff else Icons.Outlined.Mic,
-                                null,
-                                tint = Color(0xFF8B9490),
-                                modifier = Modifier.size(20.dp),
-                            )
-                        },
-                        contentPadding = PaddingValues(horizontal = 13.dp),
-                        enabled = !player.karaokeLoading && !song.isLocal,
-                        onClick = {
-                            showActions = false
-                            player.toggleKaraoke()
-                        },
-                    )
-                    HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
-                    DropdownMenuItem(
-                        modifier = Modifier.height(44.dp),
                         text = { Text("Set ringtone", color = Ink, fontSize = 12.sp) },
                         leadingIcon = {
                             Icon(
@@ -486,6 +459,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
             ArtistProfileCard(
                 artistName = creatorName,
                 photoUrl = artistPhoto,
+                verified = isVerifiedArtist,
                 loading = openingArtist,
                 onClick = ::openCreatorProfile,
                 modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
@@ -499,9 +473,6 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
         )
         player.lastError?.let { error ->
             Text(error, Modifier.padding(top = 8.dp), color = Color(0xFFFF8A80), fontSize = 12.sp, maxLines = 3)
-        }
-        player.karaokeMessage?.let { message ->
-            Text(message, Modifier.padding(top = 8.dp), color = Color(0xFFFF8A80), fontSize = 12.sp, maxLines = 2)
         }
         OfflineDownloads.lastError?.let { error ->
             Text(error, Modifier.padding(top = 8.dp), color = Color(0xFFFF8A80), fontSize = 12.sp, maxLines = 3)
@@ -655,10 +626,12 @@ private fun CircleProgressBar(
 private fun ArtistProfileCard(
     artistName: String,
     photoUrl: String?,
+    verified: Boolean,
     loading: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val verifiedBlue = Color(0xFF1D9BF0)
     Row(
         modifier
             .clip(RoundedCornerShape(14.dp))
@@ -699,16 +672,27 @@ private fun ArtistProfileCard(
             }
         }
         Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    artistName,
+                    color = Ink,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (verified) {
+                    Icon(
+                        Icons.Outlined.Verified,
+                        contentDescription = "Verified artist",
+                        tint = verifiedBlue,
+                        modifier = Modifier.padding(start = 4.dp).size(16.dp),
+                    )
+                }
+            }
             Text(
-                artistName,
-                color = Ink,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                if (loading) "Opening creator…" else "Listen more from this creator",
+                if (loading) "Opening artist…" else "Listen more from this artist",
                 color = Color(0xFF8B9490),
                 fontSize = 12.sp,
                 maxLines = 1,
@@ -878,6 +862,16 @@ private fun NextTrackCard(
             trailing?.invoke()
         }
     }
+}
+
+@Composable
+private fun RedDot(modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .size(7.dp)
+            .clip(CircleShape)
+            .background(Color(0xFFE53935)),
+    )
 }
 
 internal fun formatTime(milliseconds: Long): String {
