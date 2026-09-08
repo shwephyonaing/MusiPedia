@@ -161,7 +161,13 @@ internal fun ExploreScreen(onBack: () -> Unit = {}) {
                         .padding(horizontal = 34.dp, vertical = 14.dp)
                         .testTag("searchField")
                         .onFocusChanged { focused = it.isFocused },
-                    placeholder = { Text("Search for artists and songs", fontSize = 12.sp) },
+                    placeholder = {
+                        Text(
+                            "Search for artists and songs",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
                     trailingIcon = {
                         if (query.isNotEmpty()) {
                             IconButton(onClick = {
@@ -170,7 +176,11 @@ internal fun ExploreScreen(onBack: () -> Unit = {}) {
                                 state = SearchUi.Idle
                                 focused = true
                             }) {
-                                Icon(Icons.Outlined.Close, null)
+                                Icon(
+                                    Icons.Outlined.Close,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
                     },
@@ -181,8 +191,8 @@ internal fun ExploreScreen(onBack: () -> Unit = {}) {
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black,
+                        focusedTextColor = SearchInk,
+                        unfocusedTextColor = SearchInk,
                         cursorColor = Cyan,
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent,
