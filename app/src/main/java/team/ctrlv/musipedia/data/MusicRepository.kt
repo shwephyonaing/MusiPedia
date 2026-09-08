@@ -68,12 +68,20 @@ object MusicRepository {
             val favArtistsJob = async {
                 if (tasteArtists.isEmpty()) emptyList() else songsFromFavArtists(tasteArtists)
             }
-            // Returning users only: one radio call from the latest play (not 5 mixes + taste seeds).
+            // Returning: up to 2 radio mixes from recent plays (latest + one more).
             val radioJob = async {
                 if (firstTime) return@async emptyList()
-                val seed = seeds.firstOrNull() ?: return@async emptyList()
-                runCatching { client.mixAround(seed, youtubeOnly = true) }
-                    .getOrDefault(emptyList())
+                val radioSeeds = listOfNotNull(seeds.getOrNull(0), seeds.getOrNull(1)).distinctBy { it.id }
+                if (radioSeeds.isEmpty()) return@async emptyList()
+                coroutineScope {
+                    radioSeeds.map { seed ->
+                        async {
+                            runCatching { client.mixAround(seed, youtubeOnly = true) }
+                                .getOrDefault(emptyList())
+                                .take(6)
+                        }
+                    }.awaitAll().flatten().distinctBy { it.id }
+                }
             }
 
             val trending = resolveChartHits(chartHits.await().take(6))
@@ -212,29 +220,78 @@ object MusicRepository {
         }
     }
 
+    /**
+     * Per artist: YouTube **Popular videos** (by view count) — 2 biggest hits + 1 newer
+     * among the popular set. Falls back to YTM artist songs / search if needed.
+     */
     private suspend fun songsFromFavArtists(artists: List<TasteArtist>): List<SongItem> {
         if (artists.isEmpty()) return emptyList()
         return coroutineScope {
             interleave(
-                // Cap artists to keep home light; browse only (search fallback only if empty).
                 artists.take(5).map { artist ->
-                    async {
-                        val pageSongs = runCatching { client.artist(artist.id).songs }.getOrDefault(emptyList())
-                        val songs = pageSongs.ifEmpty {
-                            runCatching {
-                                client.search(artist.name).songs
-                            }.getOrDefault(emptyList())
-                        }
-                        songs.take(3).map {
-                            it.copy(
-                                artistId = it.artistId ?: artist.id,
-                                subtitle = it.subtitle ?: artist.name,
-                            )
-                        }
-                    }
+                    async { picksForArtist(artist) }
                 }.awaitAll(),
             ).take(12)
         }
+    }
+
+    private suspend fun picksForArtist(artist: TasteArtist): List<SongItem> {
+        val popular = runCatching { client.channelPopularVideos(artist.id, limit = 24) }
+            .getOrDefault(emptyList())
+            .filter(::isTasteTrack)
+
+        val pool = when {
+            popular.size >= 3 -> popular
+            else -> {
+                val pageSongs = runCatching { client.artist(artist.id).songs }
+                    .getOrDefault(emptyList())
+                    .filter(::isTasteTrack)
+                val search = if (pageSongs.size + popular.size < 3) {
+                    runCatching { client.search(artist.name).songs }.getOrDefault(emptyList())
+                        .filter(::isTasteTrack)
+                } else {
+                    emptyList()
+                }
+                (popular + pageSongs + search).distinctBy { it.id }
+            }
+        }
+        if (pool.isEmpty()) return emptyList()
+
+        // Already view-sorted from channelPopularVideos; keep that order as hit rank.
+        val byViews = pool
+        val picked = LinkedHashMap<String, SongItem>()
+        // 2 most-viewed hits
+        byViews.forEach { song ->
+            if (picked.size >= 2) return@forEach
+            picked.putIfAbsent(song.id, song)
+        }
+        // 1 newer among the popular set (prefer months/weeks over years)
+        val newer = byViews
+            .asSequence()
+            .filter { it.id !in picked }
+            .take(12)
+            .minByOrNull { tasteAgeScore(it.subtitle) }
+        newer?.let { picked[it.id] = it }
+        byViews.forEach { song ->
+            if (picked.size >= 3) return@forEach
+            picked.putIfAbsent(song.id, song)
+        }
+
+        return picked.values.map {
+            it.copy(
+                artistId = it.artistId ?: artist.id,
+                subtitle = artist.name,
+            )
+        }
+    }
+
+    /** Reject drama/episode / album-dump shelves; keep real music titles. */
+    private fun isTasteTrack(song: SongItem): Boolean {
+        val title = song.title
+        if (EpisodeJunk.containsMatchIn(title)) return false
+        if (NonMusicExtra.containsMatchIn(title)) return false
+        if (AlbumDump.containsMatchIn(title)) return false
+        return true
     }
 
     private fun interleave(lists: List<List<SongItem>>): List<SongItem> {
@@ -247,6 +304,31 @@ object MusicRepository {
         }
         return out.values.toList()
     }
+}
+
+private val EpisodeJunk = Regex(
+    """(?i)(\bepisode\b|\bep\.?\s*\d+\b|\bep\s*\d+\b|\bpart\s*\d+\b|\bseason\s*\d+\b|""" +
+        """\btrailer\b|\bteaser\b|\breaction\b|\binterview\b|\bpodcast\b|\bvlog\b)""",
+)
+private val NonMusicExtra = Regex("""(?i)(\bbehind the scenes\b|\bmaking of\b|\bpress conference\b|\bmemo\b|\bshouting out\b)""")
+private val AlbumDump = Regex("""(?i)(album compilation|full album|\bplaylist\b)""")
+
+private fun tasteAgeScore(subtitle: String?): Int {
+    if (subtitle.isNullOrBlank()) return 500_000
+    val m = Regex("""(\d+)\s+(second|minute|hour|day|week|month|year)""", RegexOption.IGNORE_CASE)
+        .find(subtitle) ?: return 500_000
+    val n = m.groupValues[1].toIntOrNull() ?: return 500_000
+    val unit = when (m.groupValues[2].lowercase()) {
+        "second" -> 1
+        "minute" -> 60
+        "hour" -> 3_600
+        "day" -> 86_400
+        "week" -> 604_800
+        "month" -> 2_592_000
+        "year" -> 31_536_000
+        else -> 86_400
+    }
+    return n * unit
 }
 
 private fun List<HomeSection>.hasContent(): Boolean = any { it.items.isNotEmpty() }

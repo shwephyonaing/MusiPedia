@@ -186,6 +186,83 @@ internal fun parseYoutubeVideos(root: JSONObject): List<SongItem> {
     return songs.values.toList()
 }
 
+/**
+ * YouTube channel page videos (lockupViewModel). Sort by view count for "Popular videos".
+ */
+internal fun parseChannelVideoLockups(root: JSONObject): List<SongItem> {
+    data class Row(val song: SongItem, val views: Long, val ageScore: Int)
+    val rows = mutableListOf<Row>()
+    root.walkObjects { key, obj ->
+        if (key != "lockupViewModel") return@walkObjects
+        if (obj.str("contentType") != "LOCKUP_CONTENT_TYPE_VIDEO") return@walkObjects
+        val videoId = obj.str("contentId")?.takeIf { it.length == 11 } ?: return@walkObjects
+        val meta = obj.obj("metadata")?.obj("lockupMetadataViewModel") ?: return@walkObjects
+        val title = meta.obj("title")?.str("content") ?: return@walkObjects
+        if (MusicCatalog.isNonMusic(title, null)) return@walkObjects
+        val metaBlob = meta.toString()
+        val viewsText = VIEW_TEXT.find(metaBlob)?.groupValues?.get(1)
+        val ageText = AGE_TEXT.find(metaBlob)?.groupValues?.get(1)
+        val views = parseViewCount(viewsText)
+        val thumb = obj.obj("contentImage")?.bestThumbnail()
+            ?: "https://i.ytimg.com/vi/$videoId/hq720.jpg"
+        val channelId = meta.toString().let { CHANNEL_ID.find(it)?.groupValues?.get(1) }
+        rows += Row(
+            song = SongItem(
+                id = videoId,
+                title = title,
+                subtitle = listOfNotNull(viewsText, ageText).joinToString(" • ").ifBlank { null },
+                thumbnail = thumb,
+                artistId = channelId,
+            ),
+            views = views,
+            ageScore = parseAgeScore(ageText),
+        )
+    }
+    return rows
+        .distinctBy { it.song.id }
+        .sortedWith(compareByDescending<Row> { it.views }.thenBy { it.ageScore })
+        .map { it.song }
+}
+
+private val VIEW_TEXT = Regex(""""content"\s*:\s*"(\d[\d.,]*\s*[KMB]?\s*views)"""", RegexOption.IGNORE_CASE)
+private val AGE_TEXT = Regex(
+    """"content"\s*:\s*"(\d+\s+(?:second|minute|hour|day|week|month|year)s?\s+ago)"""",
+    RegexOption.IGNORE_CASE,
+)
+private val CHANNEL_ID = Regex(""""browseId"\s*:\s*"(UC[^"]+)"""")
+
+internal fun parseViewCount(text: String?): Long {
+    if (text.isNullOrBlank()) return 0L
+    val m = Regex("""([\d,.]+)\s*([KMB])?""", RegexOption.IGNORE_CASE).find(text) ?: return 0L
+    val n = m.groupValues[1].replace(",", "").toDoubleOrNull() ?: return 0L
+    val mult = when (m.groupValues[2].uppercase()) {
+        "K" -> 1_000.0
+        "M" -> 1_000_000.0
+        "B" -> 1_000_000_000.0
+        else -> 1.0
+    }
+    return (n * mult).toLong()
+}
+
+/** Lower = newer. */
+internal fun parseAgeScore(text: String?): Int {
+    if (text.isNullOrBlank()) return 500_000
+    val m = Regex("""(\d+)\s+(second|minute|hour|day|week|month|year)""", RegexOption.IGNORE_CASE)
+        .find(text) ?: return 500_000
+    val n = m.groupValues[1].toIntOrNull() ?: return 500_000
+    val unit = when (m.groupValues[2].lowercase()) {
+        "second" -> 1
+        "minute" -> 60
+        "hour" -> 3_600
+        "day" -> 86_400
+        "week" -> 604_800
+        "month" -> 2_592_000
+        "year" -> 31_536_000
+        else -> 86_400
+    }
+    return n * unit
+}
+
 internal fun playlistIdsFrom(root: JSONObject): List<String> {
     val ids = linkedSetOf<String>()
     root.walkObjects { key, obj ->

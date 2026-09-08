@@ -189,6 +189,25 @@ class Innertube(
         return enrichBrowse(parseBrowsePage(root, "Artist"), root)
     }
 
+    /**
+     * YouTube channel videos sorted by popularity (view count) — matches the
+     * channel "Popular videos" shelf better than YTM artist "songs".
+     */
+    fun channelPopularVideos(channelId: String, limit: Int = 12): List<SongItem> {
+        if (!channelId.startsWith("UC")) return emptyList()
+        val root = runCatching {
+            youtubeWebPost(
+                "browse",
+                mapOf(
+                    "browseId" to channelId,
+                    // Channel Videos tab (lockups include view counts for sorting).
+                    "params" to CHANNEL_VIDEOS_PARAMS,
+                ),
+            )
+        }.getOrNull() ?: return emptyList()
+        return parseChannelVideoLockups(root).take(limit)
+    }
+
     fun album(browseId: String): BrowsePage {
         val root = post("browse", mapOf("browseId" to browseId))
         return enrichBrowse(parseBrowsePage(root, "Album"), root)
@@ -521,6 +540,8 @@ class Innertube(
         private const val FILTER_VIDEO = "EgWKAQIQAWoKEAkQBRAKEAMQBA%3D%3D"
         private const val FILTER_WEB_VIDEO = "EgIQAQ%3D%3D"
         private const val WEB_VERSION = "2.20250317.01.00"
+        /** Channel → Videos tab (WEB lockup grid with view counts). */
+        private const val CHANNEL_VIDEOS_PARAMS = "EgZ2aWRlb3MYAyAAMAE="
         private const val SAFARI_USER_AGENT =
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
         private const val PLAY_TAG = "MusiPediaPlay"

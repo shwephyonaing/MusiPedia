@@ -115,10 +115,21 @@ internal fun BrandIntro(onDone: () -> Unit) {
 
     LaunchedEffect(request) {
         state = SplashState.Loading
+        val returning = app?.tasteStore?.hasOnboarded() == true
+        val offline = !context.isNetworkAvailable()
+
+        // Returning users: skip the error wall and enter offline home immediately.
+        if (offline && returning) {
+            delay(MinSplashMs)
+            onDone()
+            return@LaunchedEffect
+        }
+
         val result = runCatching {
             coroutineScope {
                 val minimumSplash = async { delay(MinSplashMs) }
                 val home = async {
+                    if (offline) return@async emptyList()
                     withTimeoutOrNull(MaxSplashWaitMs) {
                         MusicRepository.homeReady(
                             recentStore?.songs().orEmpty().take(5),
@@ -133,6 +144,9 @@ internal fun BrandIntro(onDone: () -> Unit) {
         }
         val sections = result.getOrNull().orEmpty()
         if (sections.any { it.items.isNotEmpty() }) {
+            onDone()
+        } else if (returning) {
+            // Timed out / failed but they already use the app — don't trap on splash.
             onDone()
         } else {
             state = SplashState.Error(

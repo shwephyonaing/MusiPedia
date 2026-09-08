@@ -47,6 +47,7 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 import team.ctrlv.musipedia.innertube.AlbumItem
 import team.ctrlv.musipedia.innertube.HomeSection
 import team.ctrlv.musipedia.innertube.PlaylistItem
@@ -54,6 +55,7 @@ import team.ctrlv.musipedia.innertube.SongItem
 import team.ctrlv.musipedia.innertube.YtItem
 import team.ctrlv.musipedia.innertube.hdArtwork
 import team.ctrlv.musipedia.innertube.youtubeThumb
+import androidx.compose.runtime.rememberCoroutineScope
 
 private val Cyan = Color(0xFF42E4CE)
 private val Page: Color @Composable get() = MaterialTheme.colorScheme.background
@@ -79,8 +81,13 @@ internal fun HomeContent() {
     var favorites by remember { mutableStateOf(favoriteStore?.songs().orEmpty()) }
     var state by remember { mutableStateOf<HomeUi>(HomeUi.Loading) }
     var reload by remember { mutableStateOf(0) }
+    var awaitingOnlineSync by remember {
+        mutableStateOf(!context.isNetworkAvailable())
+    }
+    val scope = rememberCoroutineScope()
     val downloads = (OfflineDownloads.inFlight.values + OfflineDownloads.songs).distinctBy { it.id }
     val lastListened = recents.firstOrNull()
+    val app = context.applicationContext as? MusiumApplication
 
     val tasteSignature = tasteStore?.artists()?.joinToString(",") { it.id }.orEmpty()
 
@@ -89,6 +96,12 @@ internal fun HomeContent() {
         favorites = favoriteStore?.songs().orEmpty()
     }
     LaunchedEffect(tasteSignature, reload) {
+        if (!context.isNetworkAvailable()) {
+            // Offline shell — downloads / favorites / recents still work; sync when back online.
+            if (state !is HomeUi.Ready) state = HomeUi.Ready(emptyList())
+            awaitingOnlineSync = true
+            return@LaunchedEffect
+        }
         if (reload > 0) state = HomeUi.Loading
         val seeds = recentsStore?.songs().orEmpty().take(5)
         val tastes = tasteStore?.artists().orEmpty()
@@ -97,6 +110,7 @@ internal fun HomeContent() {
             MusicRepository.homeFeed(seeds, tastes, force = force).collect { sections ->
                 if (sections.any { it.items.isNotEmpty() }) {
                     state = HomeUi.Ready(sections)
+                    awaitingOnlineSync = false
                 }
             }
         }.onFailure {
@@ -117,15 +131,25 @@ internal fun HomeContent() {
             override fun onAvailable(network: Network) {
                 val caps = manager.getNetworkCapabilities(network) ?: return
                 if (!caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) return
-                // Refresh after offline/empty home once network returns.
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                     val current = state
-                    val needsRefresh = current is HomeUi.Error ||
+                    val needsRefresh = awaitingOnlineSync ||
+                        current is HomeUi.Error ||
                         (current is HomeUi.Ready && current.sections.none { it.items.isNotEmpty() })
-                    if (needsRefresh) {
-                        MusicRepository.clearHomeCache()
-                        reload += 1
+                    if (!needsRefresh) return@post
+                    awaitingOnlineSync = false
+                    MusicRepository.clearHomeCache()
+                    reload += 1
+                    // Refresh verified artists + home once connectivity returns.
+                    scope.launch {
+                        app?.tasteCatalogStore?.refresh(force = true)
                     }
+                }
+            }
+
+            override fun onLost(network: Network) {
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    awaitingOnlineSync = true
                 }
             }
         }
