@@ -70,12 +70,15 @@ internal fun LyricsPanel(
     lyrics: Lyrics,
     positionMs: Long,
     durationMs: Long = 0L,
+    /** Positive delays lyrics (use when lines appear too early). */
+    offsetMs: Long = 0L,
     modifier: Modifier = Modifier,
     onSeek: ((Long) -> Unit)? = null,
 ) {
     val last = lyrics.lines.lastIndex
+    val syncedPosition = positionMs - offsetMs
     val active = when {
-        lyrics.synced -> lyrics.lines.indexOfLast { it.timeMs <= positionMs }.coerceAtLeast(0)
+        lyrics.synced -> lyrics.lines.indexOfLast { it.timeMs <= syncedPosition }.coerceAtLeast(0)
         durationMs > 0L && last > 0 -> {
             val progress = (positionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
             (progress * last).toInt().coerceIn(0, last)
@@ -85,8 +88,8 @@ internal fun LyricsPanel(
     val listState = rememberLazyListState()
     LaunchedEffect(active, lyrics.synced) {
         if (active >= 0) {
-            val offset = -(listState.layoutInfo.viewportSize.height / 3)
-            runCatching { listState.animateScrollToItem(active, offset) }
+            val scrollOffset = -(listState.layoutInfo.viewportSize.height / 3)
+            runCatching { listState.animateScrollToItem(active, scrollOffset) }
         }
     }
     LazyColumn(
@@ -100,7 +103,9 @@ internal fun LyricsPanel(
             Text(
                 line.text,
                 modifier = if (lyrics.synced && onSeek != null) {
-                    Modifier.fillMaxWidth().clickable { onSeek(line.timeMs) }
+                    Modifier.fillMaxWidth().clickable {
+                        onSeek((line.timeMs + offsetMs).coerceAtLeast(0L))
+                    }
                 } else {
                     Modifier.fillMaxWidth()
                 },
@@ -114,6 +119,12 @@ internal fun LyricsPanel(
             )
         }
     }
+}
+
+internal fun formatLyricsOffset(offsetMs: Long): String {
+    val seconds = offsetMs / 1000.0
+    val sign = if (seconds > 0) "+" else ""
+    return "%s%.1fs".format(sign, seconds)
 }
 
 /** In-hierarchy sheet — avoids ModalBottomSheet Dialog tap-through bugs. */

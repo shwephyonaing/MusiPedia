@@ -25,15 +25,18 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.QueueMusic
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.DownloadDone
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Equalizer
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -44,6 +47,7 @@ import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.RepeatOne
 import androidx.compose.material.icons.outlined.SkipNext
 import androidx.compose.material.icons.outlined.SkipPrevious
@@ -117,6 +121,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     var dragging by remember { mutableStateOf(false) }
     var lyrics by remember(song.id) { mutableStateOf<Lyrics?>(null) }
     var lyricsOn by remember(song.id) { mutableStateOf(false) }
+    var showLyricSync by remember(song.id) { mutableStateOf(false) }
     var showQueue by remember { mutableStateOf(false) }
     var showSleep by remember { mutableStateOf(false) }
     var showEqualizer by remember { mutableStateOf(false) }
@@ -130,6 +135,10 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     val app = LocalContext.current.applicationContext as? MusiumApplication
     val favoriteStore = app?.favoriteStore
     val catalogStore = app?.tasteCatalogStore
+    val lyricsOffsetStore = app?.lyricsOffsetStore
+    var lyricOffsetMs by remember(song.id) {
+        mutableLongStateOf(lyricsOffsetStore?.get(song.id) ?: 0L)
+    }
     var favorite by remember(song.id) { mutableStateOf(favoriteStore?.contains(song.id) == true) }
     val isVerifiedArtist = catalogStore?.isVerified(creatorChannelId) == true ||
         catalogStore?.matching(creatorName)?.any {
@@ -171,7 +180,9 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
     }
     LaunchedEffect(song.id) {
         lyricsOn = false
+        showLyricSync = false
         lyrics = runCatching { LyricsResolver.load(song, player.duration) }.getOrNull()
+        lyricOffsetMs = lyricsOffsetStore?.get(song.id) ?: 0L
     }
     LaunchedEffect(song.id, canOpenCreator) {
         artistPhoto = null
@@ -220,6 +231,7 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                     lyrics = lyrics!!,
                     positionMs = position,
                     durationMs = duration,
+                    offsetMs = lyricOffsetMs,
                     modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
                 ) { time ->
                     player.seekTo(time)
@@ -243,15 +255,46 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
             ) {
                 Icon(Icons.Outlined.KeyboardArrowDown, "Back", tint = Ink, modifier = Modifier.size(28.dp))
             }
-            if (player.sleepActive) {
-                Text(
-                    if (player.sleepEndOfTrack) "Sleep" else formatTime(player.sleepRemaining),
-                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = .88f), RoundedCornerShape(14.dp))
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
-                    color = Cyan,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
+            Row(
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (player.sleepActive) {
+                    Text(
+                        if (player.sleepEndOfTrack) "Sleep" else formatTime(player.sleepRemaining),
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = .88f), RoundedCornerShape(14.dp))
+                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                        color = Cyan,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                if (lyricsOn && lyrics?.synced == true) {
+                    IconButton(
+                        onClick = { showLyricSync = !showLyricSync },
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = .92f), CircleShape)
+                            .size(38.dp),
+                    ) {
+                        Icon(Icons.Outlined.Edit, "Adjust lyrics sync", tint = Ink, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+            if (lyricsOn && lyrics?.synced == true && showLyricSync) {
+                LyricsSyncBar(
+                    offsetMs = lyricOffsetMs,
+                    onOffsetChange = { next ->
+                        lyricOffsetMs = next
+                        lyricsOffsetStore?.set(song.id, next)
+                    },
+                    onDismiss = { showLyricSync = false },
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 58.dp, start = 16.dp, end = 16.dp),
                 )
             }
             }
@@ -403,7 +446,11 @@ internal fun FullPlayerScreen(onBack: () -> Unit) {
                                 )
                             },
                             contentPadding = PaddingValues(horizontal = 13.dp),
-                            onClick = { lyricsOn = !lyricsOn; showActions = false },
+                            onClick = {
+                                lyricsOn = !lyricsOn
+                                if (!lyricsOn) showLyricSync = false
+                                showActions = false
+                            },
                         )
                         HorizontalDivider(color = Color(0xFFE7E9E8), thickness = 0.7.dp)
                     }
@@ -860,6 +907,87 @@ private fun NextTrackCard(
                 )
             }
             trailing?.invoke()
+        }
+    }
+}
+
+@Composable
+private fun LyricsSyncBar(
+    offsetMs: Long,
+    onOffsetChange: (Long) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val step = LyricsOffsetStore.STEP_MS
+    val max = LyricsOffsetStore.MAX_OFFSET_MS
+    Column(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.96f))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("Lyrics sync", color = Ink, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        Text(
+            "Earlier if lines lag · Later if lines lead",
+            color = Color(0xFF9AA49F),
+            fontSize = 11.sp,
+            modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            IconButton(
+                onClick = { onOffsetChange((offsetMs - step).coerceIn(-max, max)) },
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+            ) {
+                Icon(Icons.Outlined.Remove, "Earlier", tint = Ink)
+            }
+            Text(
+                formatLyricsOffset(offsetMs),
+                Modifier.width(72.dp),
+                color = Cyan,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            )
+            IconButton(
+                onClick = { onOffsetChange((offsetMs + step).coerceIn(-max, max)) },
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+            ) {
+                Icon(Icons.Outlined.Add, "Later", tint = Ink)
+            }
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(top = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "Reset",
+                color = if (offsetMs != 0L) Cyan else Color(0xFF9AA49F),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .clickable(enabled = offsetMs != 0L) { onOffsetChange(0L) }
+                    .padding(8.dp),
+            )
+            Text(
+                "Done",
+                color = Cyan,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .clickable(onClick = onDismiss)
+                    .padding(8.dp),
+            )
         }
     }
 }

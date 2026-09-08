@@ -20,6 +20,8 @@ class MusiumApplication : Application() {
         private set
     lateinit var equalizerStore: EqualizerStore
         private set
+    lateinit var lyricsOffsetStore: LyricsOffsetStore
+        private set
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     override fun onCreate() {
@@ -30,6 +32,7 @@ class MusiumApplication : Application() {
         tasteStore = TasteStore(this)
         tasteCatalogStore = TasteCatalogStore(this)
         equalizerStore = EqualizerStore(this)
+        lyricsOffsetStore = LyricsOffsetStore(this)
         MusicRepository.bindVerifiedCatalog { tasteCatalogStore.snapshot() }
         OfflineDownloads.initialize(downloadStore, appScope, this)
         StreamResolver.initialize()
