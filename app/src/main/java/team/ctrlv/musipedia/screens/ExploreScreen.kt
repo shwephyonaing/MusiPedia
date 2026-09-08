@@ -225,7 +225,16 @@ internal fun ExploreScreen(onBack: () -> Unit = {}) {
                     is SearchUi.Results -> {
                         val page = current.page
                         if (page.isEmpty) {
-                            item { Text("No results", Modifier.padding(28.dp), color = SearchInk, fontSize = 18.sp) }
+                            item {
+                                Column(Modifier.padding(horizontal = 28.dp, vertical = 20.dp)) {
+                                    Text("No results", color = SearchInk, fontSize = 18.sp)
+                                    MissingFavoriteArtistPrompt(
+                                        artistQuery = lastSearched.ifBlank { query },
+                                        color = Cyan,
+                                        modifier = Modifier.padding(top = 12.dp),
+                                    )
+                                }
+                            }
                         } else {
                             item {
                                 LazyRow(
@@ -253,23 +262,42 @@ internal fun ExploreScreen(onBack: () -> Unit = {}) {
                                 SearchTab.Albums -> page.albums
                                 SearchTab.Playlists -> page.playlists
                             }
-                            items(visible, key = { it::class.simpleName + it.id }) { item ->
-                                MusicItemRow(
-                                    item = item,
-                                    round = tab == SearchTab.Artists,
-                                    light = true,
-                                    trailing = if (item is SongItem) {
-                                        {
-                                            SearchSongMenu(
-                                                song = item.toPlayable(),
-                                                player = player,
+                            if (visible.isEmpty()) {
+                                item {
+                                    Column(Modifier.padding(horizontal = 28.dp, vertical = 20.dp)) {
+                                        Text(
+                                            "No ${tab.name.lowercase()} found",
+                                            color = SearchInk,
+                                            fontSize = 16.sp,
+                                        )
+                                        if (tab == SearchTab.Artists) {
+                                            MissingFavoriteArtistPrompt(
+                                                artistQuery = lastSearched.ifBlank { query },
+                                                color = Cyan,
+                                                modifier = Modifier.padding(top = 12.dp),
                                             )
                                         }
-                                    } else {
-                                        null
-                                    },
-                                ) {
-                                    item.open(player, router)
+                                    }
+                                }
+                            } else {
+                                items(visible, key = { it::class.simpleName + it.id }) { item ->
+                                    MusicItemRow(
+                                        item = item,
+                                        round = tab == SearchTab.Artists,
+                                        light = true,
+                                        trailing = if (item is SongItem) {
+                                            {
+                                                SearchSongMenu(
+                                                    song = item.toPlayable(),
+                                                    player = player,
+                                                )
+                                            }
+                                        } else {
+                                            null
+                                        },
+                                    ) {
+                                        item.open(player, router)
+                                    }
                                 }
                             }
                         }

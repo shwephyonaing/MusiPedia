@@ -245,13 +245,26 @@ internal fun TastePickerScreen(
             }
             if (filteredArtists.isEmpty()) {
                 item(span = { GridItemSpan(3) }) {
-                    Text(
-                        "No artists match “$query”",
-                        modifier = Modifier.padding(vertical = 28.dp),
-                        color = mute,
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center,
-                    )
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        if (query.isNotBlank()) {
+                            Text(
+                                "No artists match “$query”",
+                                color = mute,
+                                fontSize = 14.sp,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                        MissingFavoriteArtistPrompt(
+                            artistQuery = query,
+                            color = TasteAqua,
+                            modifier = Modifier.padding(top = if (query.isNotBlank()) 16.dp else 0.dp),
+                        )
+                    }
                 }
             } else {
                 items(filteredArtists, key = { it.id }) { artist ->
