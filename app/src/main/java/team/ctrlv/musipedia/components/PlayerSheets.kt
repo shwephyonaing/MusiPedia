@@ -75,19 +75,16 @@ internal fun LyricsPanel(
     modifier: Modifier = Modifier,
     onSeek: ((Long) -> Unit)? = null,
 ) {
-    val last = lyrics.lines.lastIndex
     val syncedPosition = positionMs - offsetMs
-    val active = when {
-        lyrics.synced -> lyrics.lines.indexOfLast { it.timeMs <= syncedPosition }.coerceAtLeast(0)
-        durationMs > 0L && last > 0 -> {
-            val progress = (positionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
-            (progress * last).toInt().coerceIn(0, last)
-        }
-        else -> -1
+    // Only real timed lyrics highlight/scroll. Plain lyrics used to fake progress sync.
+    val active = if (lyrics.synced) {
+        lyrics.lines.indexOfLast { it.timeMs <= syncedPosition }.coerceAtLeast(0)
+    } else {
+        -1
     }
     val listState = rememberLazyListState()
     LaunchedEffect(active, lyrics.synced) {
-        if (active >= 0) {
+        if (lyrics.synced && active >= 0) {
             val scrollOffset = -(listState.layoutInfo.viewportSize.height / 3)
             runCatching { listState.animateScrollToItem(active, scrollOffset) }
         }
@@ -99,7 +96,7 @@ internal fun LyricsPanel(
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         itemsIndexed(lyrics.lines, key = { index, line -> "${line.timeMs}-$index" }) { index, line ->
-            val current = index == active
+            val current = lyrics.synced && index == active
             Text(
                 line.text,
                 modifier = if (lyrics.synced && onSeek != null) {
@@ -111,7 +108,7 @@ internal fun LyricsPanel(
                 },
                 color = when {
                     current -> Cyan
-                    active >= 0 -> Color(0xFF8A9A9D)
+                    lyrics.synced && active >= 0 -> Color(0xFF8A9A9D)
                     else -> SheetInk
                 },
                 fontSize = if (current) 22.sp else 16.sp,

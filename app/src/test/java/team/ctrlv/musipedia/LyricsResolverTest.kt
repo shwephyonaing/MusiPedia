@@ -38,4 +38,13 @@ class LyricsResolverTest {
             .put("artistName", "Lil Kee Boi")
         assertTrue(LyricsResolver.matches(timed, "Mother Teresa", "Lil Kee Boi"))
     }
+
+    @Test
+    fun collapsesSpacedUnicodeMyanmarNotZawgyi() {
+        val broken = "She from Asana, သ ူ ့ ဇ ာ ပ င ် တ င ် ပ ါ န ဖ ျ ာ း ခ ျ"
+        val fixed = LyricsResolver.normalizeLyricText(broken)
+        assertEquals("She from Asana, သူ့ဇာပင်တင်ပါနဖျားချ", fixed)
+        assertFalse(" သ " in fixed)
+        assertEquals("love me or not", LyricsResolver.normalizeLyricText("love me or not"))
+    }
 }

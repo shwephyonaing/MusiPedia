@@ -34,6 +34,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import team.ctrlv.musipedia.innertube.Lyrics
 import java.io.IOException
 
 @UnstableApi
@@ -51,9 +52,15 @@ class MusicService : MediaSessionService() {
     @Volatile var sleepUntilTrackEnd: Boolean = false
         private set
     private var sleepJob: Job? = null
+    private var lyricsJob: Job? = null
+    private var lyricTickerJob: Job? = null
+    @Volatile private var activeLyrics: Lyrics? = null
+    @Volatile private var postedLyricLine: String? = null
+    @Volatile private var lyricsSongId: String? = null
     private var startedAsService = false
     lateinit var equalizer: EqualizerEngine
         private set
+    private lateinit var lyricsOffsetStore: LyricsOffsetStore
 
     inner class MusicBinder : Binder() {
         val service: MusicService get() = this@MusicService
@@ -63,6 +70,7 @@ class MusicService : MediaSessionService() {
         super.onCreate()
         val app = application as MusiumApplication
         recentStore = app.recentStore
+        lyricsOffsetStore = app.lyricsOffsetStore
         equalizer = EqualizerEngine(app.equalizerStore)
         val playHttp = StreamResolver.http.newBuilder()
             .addInterceptor { chain ->
@@ -143,11 +151,24 @@ class MusicService : MediaSessionService() {
                 val song = PlayableSong.from(mediaItem ?: return)
                 PlayLog.d("transition reason=$reason id=${song?.id} title=${song?.title}")
                 song?.let(recentStore::add)
-                postPlaybackNotification()
+                if (song != null && song.id != lyricsSongId) {
+                    reloadLyricsForCurrent()
+                } else {
+                    postPlaybackNotification()
+                }
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (isPlaying) ensureLyricTicker() else lyricTickerJob?.cancel()
                 postPlaybackNotification()
+            }
+
+            override fun onPositionDiscontinuity(
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int,
+            ) {
+                refreshLyricLine(force = true)
             }
 
             override fun onAudioSessionIdChanged(audioSessionId: Int) {
@@ -353,7 +374,13 @@ class MusicService : MediaSessionService() {
         val song = currentSong()
         val mediaSession = session
         if (song == null || mediaSession == null) return
-        val notification = PlaybackNotification.build(this, mediaSession, song, player.isPlaying)
+        val notification = PlaybackNotification.build(
+            this,
+            mediaSession,
+            song,
+            player.isPlaying,
+            lyricLine = postedLyricLine,
+        )
         runCatching {
             if (!startedAsService) {
                 startedAsService = true
@@ -366,6 +393,105 @@ class MusicService : MediaSessionService() {
             }
             PlayLog.d("notification posted title=${song.title} playing=${player.isPlaying}")
         }.onFailure { PlayLog.e("notification failed: ${it.message}", it) }
+    }
+
+    private fun reloadLyricsForCurrent() {
+        lyricsJob?.cancel()
+        lyricTickerJob?.cancel()
+        activeLyrics = null
+        postedLyricLine = null
+        val song = currentSong()
+        lyricsSongId = song?.id
+        if (song == null) {
+            syncSessionSecondaryText(null)
+            postPlaybackNotification()
+            return
+        }
+        syncSessionSecondaryText(null)
+        lyricsJob = scope.launch {
+            var duration = player.duration.coerceAtLeast(0L)
+            if (duration <= 0L) {
+                repeat(24) {
+                    delay(250)
+                    if (currentSong()?.id != song.id) return@launch
+                    duration = player.duration.coerceAtLeast(0L)
+                    if (duration > 0L) return@repeat
+                }
+            }
+            val lyrics = runCatching {
+                LyricsResolver.load(song, duration)
+            }.getOrNull()?.takeIf { it.synced && !it.isEmpty }
+            if (currentSong()?.id != song.id) return@launch
+            activeLyrics = lyrics
+            PlayLog.d(
+                "lyrics loaded id=${song.id} synced=${lyrics != null} lines=${lyrics?.lines?.size ?: 0}",
+            )
+            refreshLyricLine(force = true)
+            if (player.isPlaying) ensureLyricTicker()
+        }
+        postPlaybackNotification()
+    }
+
+    private fun ensureLyricTicker() {
+        if (activeLyrics == null) return
+        if (lyricTickerJob?.isActive == true) return
+        lyricTickerJob = scope.launch {
+            while (isActive) {
+                refreshLyricLine()
+                delay(400L)
+            }
+        }
+    }
+
+    private fun refreshLyricLine(force: Boolean = false) {
+        val lyrics = activeLyrics
+        val song = currentSong()
+        if (lyrics == null || song == null) {
+            if (postedLyricLine != null) {
+                postedLyricLine = null
+                syncSessionSecondaryText(null)
+                postPlaybackNotification()
+            } else if (force) {
+                syncSessionSecondaryText(null)
+                postPlaybackNotification()
+            }
+            return
+        }
+        val offset = lyricsOffsetStore.get(song.id)
+        val line = lyrics.lines
+            .lastOrNull { it.timeMs <= player.currentPosition - offset }
+            ?.text
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
+        if (!force && line == postedLyricLine) return
+        postedLyricLine = line
+        // Android 13+ System UI media card reads MediaMetadata.artist, not setContentText.
+        syncSessionSecondaryText(line)
+        postPlaybackNotification()
+    }
+
+    /**
+     * Puts the live lyric on the session artist line (what System UI shows under the title).
+     * Real artist stays in MediaItem extras via [PlayableSong.from].
+     */
+    private fun syncSessionSecondaryText(lyricLine: String?) {
+        val index = player.currentMediaItemIndex
+        if (index < 0 || index >= player.mediaItemCount) return
+        val item = player.getMediaItemAt(index)
+        val song = PlayableSong.from(item) ?: return
+        val secondary = lyricLine?.takeIf { it.isNotBlank() } ?: song.artist
+        if (item.mediaMetadata.artist?.toString() == secondary) return
+        val updated = item.buildUpon()
+            .setMediaMetadata(
+                item.mediaMetadata.buildUpon()
+                    .setTitle(song.title)
+                    .setArtist(secondary)
+                    .setSubtitle(if (lyricLine != null) song.artist else null)
+                    .build(),
+            )
+            .build()
+        runCatching { player.replaceMediaItem(index, updated) }
+            .onFailure { PlayLog.e("lyric metadata update failed: ${it.message}", it) }
     }
 
     private fun createPlaybackChannel() {

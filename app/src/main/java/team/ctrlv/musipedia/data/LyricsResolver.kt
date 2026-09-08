@@ -21,17 +21,26 @@ object LyricsResolver {
         """(?i)\s*[-–|]\s*(official\s+)?(lyrics?\s+)?(audio|video|visualizer|mv).*$""",
     )
     private val junkChars = Regex("""[^\p{L}\p{N}\s]+""")
+    // Spaces inserted between Myanmar letters/marks (common lrclib scrape bug).
+    private val myanmarInterSpace = Regex(
+        """(?<=[\u1000-\u109F\uAA60-\uAA7F\uA9E0-\uA9FF])\s+(?=[\u1000-\u109F\uAA60-\uAA7F\uA9E0-\uA9FF])""",
+    )
 
     suspend fun load(song: PlayableSong, durationMs: Long = 0L): Lyrics? = withContext(Dispatchers.IO) {
         coroutineScope {
             val remote = async {
                 if (song.isLocal) null
-                else runCatching { MusicRepository.lyrics(song.id) }.getOrNull()?.takeUnless { it.isEmpty }
+                else runCatching { MusicRepository.lyrics(song.id) }.getOrNull()?.takeUnless { it.isEmpty }?.normalized()
             }
-            val library = async { runCatching { fromLrclib(song, durationMs) }.getOrNull()?.takeUnless { it.isEmpty } }
+            val library = async {
+                runCatching { fromLrclib(song, durationMs) }.getOrNull()?.takeUnless { it.isEmpty }?.normalized()
+            }
             pick(library.await(), remote.await())
         }
     }
+
+    private fun Lyrics.normalized(): Lyrics =
+        copy(lines = lines.map { it.copy(text = normalizeLyricText(it.text)) })
 
     private fun pick(library: Lyrics?, remote: Lyrics?): Lyrics? {
         return listOf(library, remote).firstOrNull { it?.synced == true } ?: remote ?: library
@@ -94,7 +103,10 @@ object LyricsResolver {
             if (lines.isNotEmpty()) return Lyrics(lines, synced = true)
         }
         val plain = json.optString("plainLyrics").takeIf { it.isNotBlank() } ?: return null
-        val lines = plain.lines().map { it.trim() }.filter { it.isNotBlank() }.map { LyricLine(0, it) }
+        val lines = plain.lines()
+            .map { normalizeLyricText(it.trim()) }
+            .filter { it.isNotBlank() }
+            .map { LyricLine(0, it) }
         return lines.takeIf { it.isNotEmpty() }?.let { Lyrics(it, synced = false) }
     }
 
@@ -108,11 +120,23 @@ object LyricsResolver {
                 rest = match.groupValues[4].trim()
                 if (!rest.startsWith("[")) break
             }
-            val text = rest.replace(Regex("""<\d+:\d+(?:[.:]\d+)?>"""), "").trim()
+            val text = normalizeLyricText(
+                rest.replace(Regex("""<\d+:\d+(?:[.:]\d+)?>"""), "").trim(),
+            )
             if (text.isBlank()) return@forEach
             stamps.forEach { add(LyricLine(it, text)) }
         }
     }.sortedBy { it.timeMs }
+
+    /**
+     * lrclib (and some scrapes) insert spaces between every Myanmar codepoint.
+     * That breaks combining marks and shows dotted circles. Collapse those spaces.
+     * Characters are already Unicode — not Zawgyi.
+     */
+    internal fun normalizeLyricText(text: String): String {
+        if (text.isEmpty()) return text
+        return myanmarInterSpace.replace(text, "")
+    }
 
     internal fun displayTitle(raw: String, artist: String): String {
         val title = raw.replace(titleJunk, "").replace(trailingJunk, "").trim().ifBlank { raw }

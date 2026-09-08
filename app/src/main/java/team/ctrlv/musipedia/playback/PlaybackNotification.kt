@@ -17,17 +17,23 @@ object PlaybackNotification {
     const val ACTION_NEXT = "team.ctrlv.musipedia.NEXT"
     const val ACTION_PREV = "team.ctrlv.musipedia.PREV"
 
-    fun build(context: Context, session: MediaSession, song: PlayableSong, playing: Boolean): Notification {
+    fun build(
+        context: Context,
+        session: MediaSession,
+        song: PlayableSong,
+        playing: Boolean,
+        lyricLine: String? = null,
+    ): Notification {
         val launch = PendingIntent.getActivity(
             context,
             0,
             Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        return NotificationCompat.Builder(context, MusicService.CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, MusicService.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_music)
             .setContentTitle(song.title)
-            .setContentText(song.artist)
+            .setContentText(lyricLine ?: song.artist)
             .setContentIntent(launch)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -46,7 +52,10 @@ object PlaybackNotification {
                 MediaStyleNotificationHelper.MediaStyle(session)
                     .setShowActionsInCompactView(0, 1, 2),
             )
-            .build()
+        if (lyricLine != null) {
+            builder.setSubText(song.artist)
+        }
+        return builder.build()
     }
 
     private fun serviceIntent(context: Context, action: String, requestCode: Int): PendingIntent {
