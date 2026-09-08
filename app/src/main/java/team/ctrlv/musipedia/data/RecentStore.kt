@@ -6,9 +6,12 @@ import org.json.JSONObject
 
 class RecentStore(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences("musium_recent", Context.MODE_PRIVATE)
+    @Volatile private var songCache: List<PlayableSong>? = null
+    @Volatile private var queryCache: List<String>? = null
 
     @Synchronized
     fun songs(): List<PlayableSong> {
+        songCache?.let { return it }
         val raw = prefs.getString(KEY, "[]") ?: "[]"
         val array = runCatching { JSONArray(raw) }.getOrNull() ?: return emptyList()
         return buildList {
@@ -27,12 +30,13 @@ class RecentStore(context: Context) {
                     ),
                 )
             }
-        }.filter { it.id.isNotBlank() }
+        }.filter { it.id.isNotBlank() }.also { songCache = it }
     }
 
     @Synchronized
     fun add(song: PlayableSong) {
         val next = (listOf(song) + songs().filterNot { it.id == song.id }).take(40)
+        songCache = next
         val array = JSONArray()
         next.forEach { item ->
             array.put(
@@ -52,13 +56,14 @@ class RecentStore(context: Context) {
 
     @Synchronized
     fun queries(): List<String> {
+        queryCache?.let { return it }
         val raw = prefs.getString(QUERIES, "[]") ?: "[]"
         val array = runCatching { JSONArray(raw) }.getOrNull() ?: return emptyList()
         return buildList {
             for (index in 0 until array.length()) {
                 array.optString(index).trim().takeIf { it.isNotBlank() }?.let(::add)
             }
-        }
+        }.also { queryCache = it }
     }
 
     @Synchronized
@@ -73,6 +78,7 @@ class RecentStore(context: Context) {
     }
 
     private fun saveQueries(items: List<String>) {
+        queryCache = items
         val array = JSONArray()
         items.forEach { array.put(it) }
         prefs.edit().putString(QUERIES, array.toString()).apply()

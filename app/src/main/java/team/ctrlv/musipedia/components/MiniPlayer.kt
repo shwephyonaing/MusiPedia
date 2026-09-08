@@ -28,7 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -51,14 +51,6 @@ private val MiniInk: Color @Composable get() = MaterialTheme.colorScheme.onSurfa
 internal fun MiniPlayer(onOpen: () -> Unit, modifier: Modifier = Modifier, protectBottom: Boolean = false) {
     val player = LocalPlayerConnection.current ?: return
     val song = player.current ?: return
-    var position by remember { mutableLongStateOf(0L) }
-    LaunchedEffect(song.id, player.playing) {
-        while (true) {
-            position = player.currentPosition()
-            delay(400)
-        }
-    }
-    val duration = player.duration.coerceAtLeast(1L)
     var safeModifier = modifier
         .fillMaxWidth()
         .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
@@ -76,7 +68,6 @@ internal fun MiniPlayer(onOpen: () -> Unit, modifier: Modifier = Modifier, prote
                 artworkUrl = song.thumbnailUrl,
                 title = song.title,
                 playing = player.playing,
-                progress = (position.toFloat() / duration).coerceIn(0f, 1f),
                 onTogglePlay = player::togglePlay,
             )
             Column(Modifier.padding(start = 12.dp).weight(1f)) {
@@ -95,28 +86,13 @@ private fun MiniPlayerArtworkControl(
     artworkUrl: String?,
     title: String,
     playing: Boolean,
-    progress: Float,
     onTogglePlay: () -> Unit,
 ) {
-    val trackColor = MaterialTheme.colorScheme.outlineVariant
+    val art = rememberArtworkRequest(artworkUrl, ArtworkSizes.Mini)
     Box(Modifier.size(50.dp), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.fillMaxWidth().height(50.dp)) {
-            val stroke = 3.dp.toPx()
-            drawCircle(
-                color = trackColor,
-                radius = (size.minDimension - stroke) / 2,
-                style = Stroke(stroke),
-            )
-            drawArc(
-                color = Cyan,
-                startAngle = -90f,
-                sweepAngle = progress.coerceIn(0f, 1f) * 360f,
-                useCenter = false,
-                style = Stroke(width = stroke, cap = StrokeCap.Round),
-            )
-        }
+        MiniProgressRing(playing = playing)
         AsyncImage(
-            model = artworkUrl,
+            model = art,
             contentDescription = title,
             modifier = Modifier.size(42.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
             contentScale = ContentScale.Crop,
@@ -130,5 +106,35 @@ private fun MiniPlayerArtworkControl(
                 modifier = Modifier.size(25.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun MiniProgressRing(playing: Boolean) {
+    val player = LocalPlayerConnection.current
+    var progress by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(playing, player?.current?.id) {
+        if (player == null) return@LaunchedEffect
+        while (true) {
+            val duration = player.duration.coerceAtLeast(1L)
+            progress = (player.currentPosition().toFloat() / duration).coerceIn(0f, 1f)
+            delay(if (playing) 500L else 1_200L)
+        }
+    }
+    val trackColor = MaterialTheme.colorScheme.outlineVariant
+    Canvas(Modifier.fillMaxWidth().height(50.dp)) {
+        val stroke = 3.dp.toPx()
+        drawCircle(
+            color = trackColor,
+            radius = (size.minDimension - stroke) / 2,
+            style = Stroke(stroke),
+        )
+        drawArc(
+            color = Cyan,
+            startAngle = -90f,
+            sweepAngle = progress.coerceIn(0f, 1f) * 360f,
+            useCenter = false,
+            style = Stroke(width = stroke, cap = StrokeCap.Round),
+        )
     }
 }

@@ -50,11 +50,17 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 
 private val SplashDeep = Color(0xFF2BB8B8)
 private val SplashMid = Color(0xFF42E4CE)
 private val SplashLight = Color(0xFF7AEFE0)
 private val SplashFog = Color(0x66FFFFFF)
+
+/** Enough for the brand lockup; Home finishes For You after splash. */
+private const val MinSplashMs = 1_800L
+/** Cap wait on slow networks — Home can finish loading after splash. */
+private const val MaxSplashWaitMs = 7_000L
 
 private sealed interface SplashState {
     data object Loading : SplashState
@@ -64,9 +70,10 @@ private sealed interface SplashState {
 @Composable
 internal fun BrandIntro(onDone: () -> Unit) {
     val context = LocalContext.current
-    val recentStore = remember {
-        (context.applicationContext as? MusiumApplication)?.recentStore
+    val app = remember {
+        context.applicationContext as? MusiumApplication
     }
+    val recentStore = remember { app?.recentStore }
     var state by remember { mutableStateOf<SplashState>(SplashState.Loading) }
     var request by remember { mutableIntStateOf(0) }
     var showTagline by remember { mutableStateOf(false) }
@@ -110,13 +117,15 @@ internal fun BrandIntro(onDone: () -> Unit) {
         state = SplashState.Loading
         val result = runCatching {
             coroutineScope {
-                val minimumSplash = async { delay(2350) }
+                val minimumSplash = async { delay(MinSplashMs) }
                 val home = async {
-                    MusicRepository.home(
-                        recentStore?.songs().orEmpty().take(5),
-                        (context.applicationContext as? MusiumApplication)?.tasteStore?.artists().orEmpty(),
-                        force = false,
-                    )
+                    withTimeoutOrNull(MaxSplashWaitMs) {
+                        MusicRepository.homeReady(
+                            recentStore?.songs().orEmpty().take(5),
+                            app?.tasteStore?.artists().orEmpty(),
+                            force = false,
+                        )
+                    }
                 }
                 minimumSplash.await()
                 home.await()

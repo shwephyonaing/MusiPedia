@@ -12,11 +12,13 @@ data class TasteArtist(
 
 class TasteStore(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences("musium_taste", Context.MODE_PRIVATE)
+    @Volatile private var artistCache: List<TasteArtist>? = null
 
     fun isComplete(): Boolean = artists().size >= MIN_ARTISTS
 
     @Synchronized
     fun artists(): List<TasteArtist> {
+        artistCache?.let { return it }
         val array = runCatching { JSONArray(prefs.getString(KEY_ARTISTS, "[]")) }.getOrNull()
             ?: return emptyList()
         return buildList {
@@ -33,11 +35,12 @@ class TasteStore(context: Context) {
                     ),
                 )
             }
-        }
+        }.also { artistCache = it }
     }
 
     @Synchronized
     fun save(artists: List<TasteArtist>) {
+        artistCache = artists
         val artistArray = JSONArray()
         artists.forEach { artist ->
             artistArray.put(

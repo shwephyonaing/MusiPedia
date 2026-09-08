@@ -6,7 +6,6 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,11 +30,8 @@ fun MusiumApp() {
     AnimatedContent(
         targetState = gate,
         transitionSpec = {
-            (fadeIn(tween(480, easing = FastOutSlowInEasing)) +
-                scaleIn(
-                    initialScale = 0.985f,
-                    animationSpec = tween(480, easing = FastOutSlowInEasing),
-                )) togetherWith fadeOut(tween(320)) using SizeTransform(clip = false)
+            fadeIn(tween(280, easing = FastOutSlowInEasing)) togetherWith
+                fadeOut(tween(180)) using SizeTransform(clip = false)
         },
         label = "launchGate",
     ) { step ->

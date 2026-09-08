@@ -6,9 +6,12 @@ import org.json.JSONObject
 
 class FavoriteStore(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences("musium_favorites", Context.MODE_PRIVATE)
+    @Volatile private var cache: List<PlayableSong>? = null
+    @Volatile private var idSet: Set<String>? = null
 
     @Synchronized
     fun songs(): List<PlayableSong> {
+        cache?.let { return it }
         val array = runCatching { JSONArray(prefs.getString(KEY, "[]")) }.getOrNull() ?: return emptyList()
         return buildList {
             for (index in 0 until array.length()) {
@@ -28,11 +31,17 @@ class FavoriteStore(context: Context) {
                     ),
                 )
             }
+        }.also {
+            cache = it
+            idSet = it.mapTo(HashSet()) { song -> song.id }
         }
     }
 
     @Synchronized
-    fun contains(id: String): Boolean = songs().any { it.id == id }
+    fun contains(id: String): Boolean {
+        idSet?.let { return id in it }
+        return songs().any { it.id == id }
+    }
 
     @Synchronized
     fun toggle(song: PlayableSong): Boolean {
@@ -46,6 +55,8 @@ class FavoriteStore(context: Context) {
     fun remove(id: String) = save(songs().filterNot { it.id == id })
 
     private fun save(songs: List<PlayableSong>) {
+        cache = songs
+        idSet = songs.mapTo(HashSet()) { it.id }
         val array = JSONArray()
         songs.forEach { song ->
             array.put(

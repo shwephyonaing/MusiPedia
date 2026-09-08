@@ -14,6 +14,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
@@ -25,9 +26,12 @@ object MusicRepository {
         gl = Locale.getDefault().country.ifBlank { "US" },
     )
     @Volatile private var cachedHome: List<HomeSection>? = null
+    /** False while For You / fav rails are still resolving after a partial Trending emit. */
+    @Volatile private var homeFullyLoaded: Boolean = false
 
     fun clearHomeCache() {
         cachedHome = null
+        homeFullyLoaded = false
     }
 
     suspend fun search(query: String): SearchPage = withContext(Dispatchers.IO) {
@@ -46,57 +50,82 @@ object MusicRepository {
             val hit = cachedHome?.takeIf { !force && it.hasContent() }
             if (hit != null) {
                 emit(hit)
-                return@flow
+                // Partial cache (Trending only) still needs For You / fav rails.
+                if (homeFullyLoaded) return@flow
             }
-            cachedHome = null
+            if (force) {
+                cachedHome = null
+                homeFullyLoaded = false
+            }
 
             coroutineScope {
-            // Apple chart is cheap; resolve YouTube IDs in parallel with For You mixes.
             val chartHits = async {
                 runCatching { client.appleMostPlayed(10, chartCountry = "mm") }.getOrDefault(emptyList())
             }
-            val favArtistsJob = async { songsFromFavArtists(tasteArtists) }
             val seeds = recent.take(5).map { it.toSongItem() }
-            val mixJob = async {
-                val tasteSeeds = tasteSeedSongs(tasteArtists)
-                val mixSeeds = (seeds + tasteSeeds).distinctBy { it.id }.ifEmpty {
-                    val first = chartHits.await().firstOrNull() ?: return@async emptyList()
-                    listOfNotNull(
-                        runCatching {
-                            client.findSong("${first.title} ${first.artist}", youtubeOnly = true)
-                        }.getOrNull()?.copy(
-                            title = first.title,
-                            subtitle = first.artist,
-                            thumbnail = first.artwork?.hdArtwork() ?: first.artwork,
-                        ),
-                    )
-                }
-                buildForYouMix(mixSeeds.take(5))
+            val firstTime = seeds.isEmpty()
+            // One shared artist fetch for both rails — skip when there are no tastes.
+            val favArtistsJob = async {
+                if (tasteArtists.isEmpty()) emptyList() else songsFromFavArtists(tasteArtists)
+            }
+            // Returning users only: one radio call from the latest play (not 5 mixes + taste seeds).
+            val radioJob = async {
+                if (firstTime) return@async emptyList()
+                val seed = seeds.firstOrNull() ?: return@async emptyList()
+                runCatching { client.mixAround(seed, youtubeOnly = true) }
+                    .getOrDefault(emptyList())
             }
 
-            val trending = resolveChartHits(chartHits.await())
-            emit(
-                listOfNotNull(
-                    HomeSection("For You", emptyList()),
-                    trending.takeIf { it.isNotEmpty() }?.let { HomeSection("Trending", it) },
-                ),
+            val trending = resolveChartHits(chartHits.await().take(6))
+            val partial = listOfNotNull(
+                HomeSection("For You", emptyList()),
+                trending.takeIf { it.isNotEmpty() }?.let { HomeSection("Trending", it) },
             )
+            if (partial.hasContent()) {
+                cachedHome = partial
+                homeFullyLoaded = false
+            }
+            emit(partial)
 
-            val heard = seeds.map { it.id }.toSet()
             val fromFav = favArtistsJob.await()
-            val forYou = (mixJob.await().filter { it.id !in heard } + fromFav + trending)
-                .distinctBy { it.id }
-                .take(10)
+            val forYou = if (firstTime) {
+                // First launch after personalize: same shelf as From Your Fav Artists (zero extra calls).
+                fromFav
+            } else {
+                val heard = seeds.map { it.id }.toSet()
+                val radio = radioJob.await().filter { it.id !in heard }
+                // Last plays → radio, then fav artists (reuse), trending as last-resort filler.
+                (radio + fromFav + trending)
+                    .distinctBy { it.id }
+                    .filter { it.id !in heard }
+                    .take(10)
+            }
             val sections = listOfNotNull(
                 forYou.takeIf { it.isNotEmpty() }?.let { HomeSection("For You", it) },
                 trending.takeIf { it.isNotEmpty() }?.let { HomeSection("Trending", it) },
                 fromFav.takeIf { it.isNotEmpty() }?.let { HomeSection("From Your Fav Artists", it) },
             )
             // Never cache empty home — offline failures would stick forever in-process.
-            if (sections.hasContent()) cachedHome = sections
+            if (sections.hasContent()) {
+                cachedHome = sections
+                homeFullyLoaded = true
+            }
             emit(sections)
         }
     }.flowOn(Dispatchers.IO)
+
+    /**
+     * Warm home and return as soon as any section has items (usually Trending).
+     * Cancelling after this leaves a partial cache; Home continues For You via homeFeed.
+     */
+    suspend fun homeReady(
+        recent: List<PlayableSong> = emptyList(),
+        tasteArtists: List<TasteArtist> = emptyList(),
+        force: Boolean = false,
+    ): List<HomeSection> {
+        cachedHome?.takeIf { !force && it.hasContent() }?.let { return it }
+        return homeFeed(recent, tasteArtists, force).first { it.hasContent() }
+    }
 
     suspend fun home(
         recent: List<PlayableSong> = emptyList(),
@@ -183,26 +212,12 @@ object MusicRepository {
         }
     }
 
-    private suspend fun tasteSeedSongs(artists: List<TasteArtist>): List<SongItem> {
-        if (artists.isEmpty()) return emptyList()
-        return coroutineScope {
-            artists.take(5).map { artist ->
-                async {
-                    val fromBrowse = runCatching { client.artist(artist.id).songs.firstOrNull() }.getOrNull()
-                    fromBrowse?.copy(artistId = artist.id, subtitle = artist.name)
-                        ?: runCatching {
-                            client.findSong(artist.name, youtubeOnly = true)
-                        }.getOrNull()?.copy(artistId = artist.id, subtitle = artist.name)
-                }
-            }.awaitAll().filterNotNull()
-        }
-    }
-
     private suspend fun songsFromFavArtists(artists: List<TasteArtist>): List<SongItem> {
         if (artists.isEmpty()) return emptyList()
         return coroutineScope {
             interleave(
-                artists.take(8).map { artist ->
+                // Cap artists to keep home light; browse only (search fallback only if empty).
+                artists.take(5).map { artist ->
                     async {
                         val pageSongs = runCatching { client.artist(artist.id).songs }.getOrDefault(emptyList())
                         val songs = pageSongs.ifEmpty {
@@ -210,7 +225,7 @@ object MusicRepository {
                                 client.search(artist.name).songs
                             }.getOrDefault(emptyList())
                         }
-                        songs.take(4).map {
+                        songs.take(3).map {
                             it.copy(
                                 artistId = it.artistId ?: artist.id,
                                 subtitle = it.subtitle ?: artist.name,
@@ -219,21 +234,6 @@ object MusicRepository {
                     }
                 }.awaitAll(),
             ).take(12)
-        }
-    }
-
-    private suspend fun buildForYouMix(seeds: List<SongItem>): List<SongItem> {
-        if (seeds.isEmpty()) return emptyList()
-        return coroutineScope {
-            interleave(
-                seeds.map { seed ->
-                    async {
-                        runCatching { client.mixAround(seed, youtubeOnly = true) }
-                            .getOrDefault(emptyList())
-                            .take(8)
-                    }
-                }.awaitAll(),
-            )
         }
     }
 

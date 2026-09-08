@@ -148,7 +148,7 @@ object OfflineDownloads {
                         output.write(buffer, 0, n)
                         read += n
                         val now = System.currentTimeMillis()
-                        if (total > 0 && now - lastUi >= 200) {
+                        if (total > 0 && now - lastUi >= 500) {
                             lastUi = now
                             val value = (read.toFloat() / total.toFloat()).coerceIn(0f, 1f)
                             withContext(Dispatchers.Main) {

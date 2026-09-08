@@ -278,8 +278,13 @@ private fun FeaturedHero(
             if (model.isNullOrBlank()) {
                 BrandMark(Modifier.height(92.dp).width(104.dp), Cyan)
             } else {
+                val heroReq = rememberArtworkRequest(
+                    data = model,
+                    size = ArtworkSizes.HeroMaxWidth,
+                    crossfade = false,
+                )
                 AsyncImage(
-                    model = model,
+                    model = heroReq,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
@@ -411,25 +416,33 @@ private fun DownloadsRow(songs: List<PlayableSong>, player: PlayerConnection?) {
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         items(songs, key = { it.id }) { song ->
-            Box {
-                PosterCard(
-                    image = song.thumbnailUrl,
-                    title = song.title.prettyTitle(),
-                    subtitle = song.artist.prettyTitle().ifBlank { "Downloaded" },
-                    onClick = {
-                        val queue = OfflineDownloads.songs
-                        player?.play(queue, queue.indexOfFirst { it.id == song.id }.coerceAtLeast(0))
-                    },
-                )
-                if (song.id in OfflineDownloads.progressing) {
-                    CircularProgressIndicator(
-                        progress = { OfflineDownloads.progress[song.id] ?: 0f },
-                        color = Cyan,
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.align(Alignment.Center).padding(bottom = 36.dp).size(28.dp),
-                    )
-                }
-            }
+            DownloadPosterCard(song = song, player = player)
+        }
+    }
+}
+
+@Composable
+private fun DownloadPosterCard(song: PlayableSong, player: PlayerConnection?) {
+    // Progress state stays local so ticks don't rebuild the whole Home LazyColumn.
+    val inProgress = song.id in OfflineDownloads.progressing
+    val progress = if (inProgress) OfflineDownloads.progress[song.id] ?: 0f else 0f
+    Box {
+        PosterCard(
+            image = song.thumbnailUrl,
+            title = song.title.prettyTitle(),
+            subtitle = song.artist.prettyTitle().ifBlank { "Downloaded" },
+            onClick = {
+                val queue = OfflineDownloads.songs
+                player?.play(queue, queue.indexOfFirst { it.id == song.id }.coerceAtLeast(0))
+            },
+        )
+        if (inProgress) {
+            CircularProgressIndicator(
+                progress = { progress },
+                color = Cyan,
+                strokeWidth = 2.dp,
+                modifier = Modifier.align(Alignment.Center).padding(bottom = 36.dp).size(28.dp),
+            )
         }
     }
 }
@@ -441,11 +454,12 @@ private fun PosterCard(
     subtitle: String,
     onClick: () -> Unit,
 ) {
+    val art = rememberArtworkRequest(image, ArtworkSizes.Poster)
     Column(Modifier.width(158.dp).clickable(onClick = onClick)) {
         AsyncImage(
-            image,
-            title,
-            Modifier.size(158.dp).clip(RoundedCornerShape(14.dp)).background(Tile),
+            model = art,
+            contentDescription = title,
+            modifier = Modifier.size(158.dp).clip(RoundedCornerShape(14.dp)).background(Tile),
             contentScale = ContentScale.Crop,
         )
         Text(
@@ -488,18 +502,24 @@ private fun SectionTitleRow(
     }
 }
 
-private fun String.prettyTitle(): String = trim().replace(Regex("\\s+-\\s*$"), "")
+private val PrettyDashTail = Regex("\\s+-\\s*$")
+private val HeroPipe = Regex("""(?i)\s*\|\s*.+$""")
+private val HeroParen = Regex(
+    """(?i)\s*[\(\[]\s*(official\s+)?(audio|music\s+video|mv|lyric[s]?(?:\s+video)?|visualizer)\s*[\)\]]""",
+)
+private val HeroDashOfficial = Regex("""(?i)\s*[-–—]\s*(official|lyric).+$""")
+private val MultiSpace = Regex("""\s{2,}""")
+private val TrailingDash = Regex("""\s+[-–—]\s*$""")
+
+private fun String.prettyTitle(): String = trim().replace(PrettyDashTail, "")
 
 private fun String.heroTitle(): String {
     var title = trim()
-    title = title.replace(Regex("""(?i)\s*\|\s*.+$"""), "")
-    title = title.replace(
-        Regex("""(?i)\s*[\(\[]\s*(official\s+)?(audio|music\s+video|mv|lyric[s]?(?:\s+video)?|visualizer)\s*[\)\]]"""),
-        "",
-    )
-    title = title.replace(Regex("""(?i)\s*[-–—]\s*(official|lyric).+$"""), "")
-    title = title.replace(Regex("""\s{2,}"""), " ").trim()
-    title = title.replace(Regex("""\s+[-–—]\s*$"""), "")
+    title = title.replace(HeroPipe, "")
+    title = title.replace(HeroParen, "")
+    title = title.replace(HeroDashOfficial, "")
+    title = title.replace(MultiSpace, " ").trim()
+    title = title.replace(TrailingDash, "")
     return title.ifBlank { trim() }.prettyTitle()
 }
 

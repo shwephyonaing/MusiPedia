@@ -177,12 +177,6 @@
       "region": "mm"
     },
     {
-      "id": "UCI7fDlrZr2fPCc9FVMyMOtw",
-      "name": "Phyo Lay",
-      "thumbnailUrl": "https://yt3.googleusercontent.com/_yr9KOiRyyCc9Vsi2GSNtjsttuIsrQC_guMOz6WvvpL4hzqyj66l0HPfio558vbG8DGU27lgZw=s900-c-k-c0x00ffffff-no-rj",
-      "region": "mm"
-    },
-    {
       "id": "UCpMQ6eURWfaAqeKvUBMUT2g",
       "name": "Ki Ki Kyaw Zaw",
       "thumbnailUrl": "https://yt3.googleusercontent.com/jd0sFItAakFHc5cvUzxkCvABxPBy1khq5cfE3o8VWtJUGe1hMmPMSR1Xaj995ZT0LjL9QNaoiw=s900-c-k-c0x00ffffff-no-rj",
@@ -195,9 +189,10 @@
       "region": "mm"
     },
     {
-      "id": "UCC80c-xtRMOu6cIob017Czg",
+      "id": "UC9qyWNcaDCgxDq8apJhsYRA",
       "name": "Iron Cross",
-      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_k_YYK3DguaTmEf0OS9ni-p8B3OjUgYPwUVGcv44bnzgXOkhkPcnYEaaiqygACONf8Oaw=s900-c-k-c0x00ffffff-no-rj",
+      "handle": "@IronCrossOfficialChannel",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/xZSJ01rntVAFC-Smsh1lUehplnTQMPxPiT5vkbmohP64UB5pzMv-FNgYeOEdmSPjWm2ukcNa4Q=s900-c-k-c0x00ffffff-no-rj",
       "region": "mm"
     },
     {
@@ -390,6 +385,7 @@
     {
       "id": "UC0C-w0YjGpqDXGB8IHb662A",
       "name": "Ed Sheeran",
+      "handle": "@EdSheeran",
       "thumbnailUrl": "https://yt3.googleusercontent.com/pZQ5JMD4EOI8TcNYAPTzMexe_fC0CKnb_hYlV4rPfIzmDidF239fH1XKmzkeT30XSg7fxNwc_w=s900-c-k-c0x00ffffff-no-rj",
       "region": "intl"
     },
@@ -520,12 +516,6 @@
       "region": "intl"
     },
     {
-      "id": "UCmU3DZhJ08_W6hh7Pf3zurw",
-      "name": "Charli XCX",
-      "thumbnailUrl": "https://yt3.googleusercontent.com/ytc/AIdro_mG3Z-n-Wq-T6HQ5TXn4lePamwAzegNnImiABYAuXY=s900-c-k-c0x00ffffff-no-rj",
-      "region": "intl"
-    },
-    {
       "id": "UCNL1ZadSjHpjm4q9j2sVtOA",
       "name": "Lady Gaga",
       "thumbnailUrl": "https://yt3.googleusercontent.com/lM8HHBd5BZtP_-Dh1i3n1Z4teVW8v2KTG-hsS83yXUiK0K6krkk1XNEFbho3uwH-CS-FQpnlHw=s900-c-k-c0x00ffffff-no-rj",
@@ -541,6 +531,20 @@
       "id": "UCuHzBCaKmtaLcRAOoazhCPA",
       "name": "Beyoncé",
       "thumbnailUrl": "https://yt3.googleusercontent.com/4UxYRy4fJ0Fo54TRPkw19_W6uCCnzTBSkzm75vGIiEObg4IgY5Ie1BIsNcflFNqofAjxEpTRcQ=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCPq0kgKjpNzryoNbRp5eUyQ",
+      "name": "Cup of Joe",
+      "handle": "@cupofjoemusic_",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/Bh9-8_9hC8UYAVih3G43dF2k4Xf0fFB4b6ydZERAURYKoIV3O6Gi3oHIIdo59xKgUbczuz4V=s900-c-k-c0x00ffffff-no-rj",
+      "region": "intl"
+    },
+    {
+      "id": "UCkOcpvTzdGIygSbNGdaNdSg",
+      "name": "Zack Tabudlo",
+      "handle": "@ZackTabudloOfficial",
+      "thumbnailUrl": "https://yt3.googleusercontent.com/xLBQ3Xud3fjffEvmJuVuxs-mWrQD3cRy9IBbCJ1jhImyV31L9oO-iyGLHTA8bABMyUhODZlb=s900-c-k-c0x00ffffff-no-rj",
       "region": "intl"
     }
   ]

@@ -161,11 +161,12 @@ private fun BrowseScaffold(
                     rawArtwork?.hdArtwork()
                 }
                 val context = LocalContext.current
-                val heroModel = remember(heroArtwork) {
+                val heroModel = remember(heroArtwork, roundArtwork) {
                     heroArtwork?.let { url ->
                         ImageRequest.Builder(context)
                             .data(url)
-                            .size(1600)
+                            .size(if (roundArtwork) 560 else 480)
+                            .crossfade(false)
                             .build()
                     }
                 }
@@ -245,11 +246,12 @@ private fun BrowseScaffold(
 
 @Composable
 private fun BrowseTile(item: YtItem, onClick: () -> Unit) {
+    val art = rememberArtworkRequest(item.thumbnail, 140.dp)
     Column(Modifier.width(140.dp).clickable(onClick = onClick)) {
         AsyncImage(
-            item.thumbnail,
-            item.title,
-            Modifier.size(140.dp).clip(RoundedCornerShape(8.dp)).background(Color.DarkGray),
+            model = art,
+            contentDescription = item.title,
+            modifier = Modifier.size(140.dp).clip(RoundedCornerShape(8.dp)).background(Color.DarkGray),
             contentScale = ContentScale.Crop,
         )
         Text(item.title, Modifier.padding(top = 8.dp), color = PageInk, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 2)

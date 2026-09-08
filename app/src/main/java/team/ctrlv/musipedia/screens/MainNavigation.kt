@@ -121,30 +121,17 @@ fun MusiumHomeScreen() {
     MusiumTheme(darkMode = darkMode) {
     CompositionLocalProvider(LocalMusicRouter provides router) {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-            if (selectedTab in 0..3 && showTabs) HomeContent()
+            // Only compose Home on its tab — keeps Explore/Library from invalidating the feed.
+            if (selectedTab == 0 && showTabs) HomeContent()
             KeepAlive(visible = selectedTab == 1 && showTabs, animateFromBottom = true) {
-                Box(Modifier.fillMaxSize()) {
-                    ExploreScreen(onBack = { selectedTab = 0 })
-                    MiniPlayer(
-                        onOpen = { fullPlayer = true },
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                        protectBottom = true,
-                    )
-                }
+                ExploreScreen(onBack = { selectedTab = 0 })
             }
             KeepAlive(visible = selectedTab == 2 && showTabs, animateFromBottom = true) {
-                Box(Modifier.fillMaxSize()) {
-                    LibraryScreen(
-                        active = selectedTab == 2 && showTabs,
-                        onBack = { selectedTab = 0 },
-                        onExplore = { selectedTab = 0 },
-                    )
-                    MiniPlayer(
-                        onOpen = { fullPlayer = true },
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                        protectBottom = true,
-                    )
-                }
+                LibraryScreen(
+                    active = selectedTab == 2 && showTabs,
+                    onBack = { selectedTab = 0 },
+                    onExplore = { selectedTab = 0 },
+                )
             }
             KeepAlive(visible = selectedTab == 3 && showTabs, animateFromBottom = true) {
                 SettingsScreen(
@@ -172,50 +159,52 @@ fun MusiumHomeScreen() {
                 )
             }
             KeepAlive(visible = showDownloads, animateFromBottom = true) {
-                Box(Modifier.fillMaxSize()) {
-                    DownloadsScreen(darkMode = darkMode, onBack = { showDownloads = false })
-                    MiniPlayer(
-                        onOpen = { fullPlayer = true },
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                        protectBottom = true,
-                    )
-                }
+                DownloadsScreen(darkMode = darkMode, onBack = { showDownloads = false })
             }
             if (!fullPlayer && destination != null) {
-                Box(Modifier.fillMaxSize()) {
-                    when (val route = destination) {
-                        is MusicRoute.Artist -> ArtistScreen(
-                            route.id,
-                            route.name,
-                            route.profileImage,
-                            onBack = { goBack() },
-                        )
-                        is MusicRoute.Album -> AlbumScreen(route.id, route.name, onBack = { goBack() })
-                        is MusicRoute.Playlist -> PlaylistScreen(route.id, route.name, onBack = { goBack() })
-                        MusicRoute.Downloads -> DownloadsScreen(darkMode = darkMode, onBack = { goBack() })
-                        MusicRoute.Favorites -> Unit
-                        null -> Unit
-                    }
-                    MiniPlayer(
-                        onOpen = { fullPlayer = true },
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                        protectBottom = true,
+                when (val route = destination) {
+                    is MusicRoute.Artist -> ArtistScreen(
+                        route.id,
+                        route.name,
+                        route.profileImage,
+                        onBack = { goBack() },
                     )
+                    is MusicRoute.Album -> AlbumScreen(route.id, route.name, onBack = { goBack() })
+                    is MusicRoute.Playlist -> PlaylistScreen(route.id, route.name, onBack = { goBack() })
+                    MusicRoute.Downloads -> DownloadsScreen(darkMode = darkMode, onBack = { goBack() })
+                    MusicRoute.Favorites -> Unit
+                    null -> Unit
                 }
             }
             KeepAlive(visible = fullPlayer, animateFromBottom = true) {
                 FullPlayerScreen(onBack = { fullPlayer = false })
             }
-            if (!fullPlayer && selectedTab == 0 && destination == null) {
+
+            // One mini player for the whole shell — avoids N position timers.
+            val showMini = !fullPlayer && !showTaste && (
+                (showTabs && selectedTab in 0..2) ||
+                    showDownloads ||
+                    destination != null
+                )
+            val showBottomNav = !fullPlayer && !showTaste && !showDownloads &&
+                selectedTab == 0 && destination == null
+            if (showMini || showBottomNav) {
                 Column(Modifier.align(Alignment.BottomCenter)) {
-                    MiniPlayer(onOpen = { fullPlayer = true })
-                    BottomNavigation(selectedTab, onSelected = { tab ->
-                        if (tab != selectedTab) {
-                            clearBrowse()
-                            fullPlayer = false
-                        }
-                        selectedTab = tab
-                    })
+                    if (showMini) {
+                        MiniPlayer(
+                            onOpen = { fullPlayer = true },
+                            protectBottom = !showBottomNav,
+                        )
+                    }
+                    if (showBottomNav) {
+                        BottomNavigation(selectedTab, onSelected = { tab ->
+                            if (tab != selectedTab) {
+                                clearBrowse()
+                                fullPlayer = false
+                            }
+                            selectedTab = tab
+                        })
+                    }
                 }
             }
             if (showOfflineDialog) {
@@ -310,33 +299,28 @@ private fun KeepAlive(visible: Boolean, animateFromBottom: Boolean = false, cont
     }
     val slideProgress by animateFloatAsState(
         targetValue = if (visible) 0f else 1f,
-        animationSpec = tween(durationMillis = 480, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
         label = "secondaryScreenSlide",
         finishedListener = {
             if (!visible) keepFullSize = false
         },
     )
-    val modifier = when {
-        (visible || keepFullSize) && animateFromBottom -> Modifier.fillMaxSize().graphicsLayer {
-            translationY = size.height * slideProgress
-            alpha = 1f - slideProgress
-        }
-        visible || keepFullSize -> Modifier.fillMaxSize()
-        else -> Modifier.size(0.dp)
-    }
+    // Dispose off-screen trees entirely — was composing Explore/Library/player at 0.dp forever.
+    if (!visible && !keepFullSize) return
     Box(
-        modifier
+        Modifier
+            .fillMaxSize()
+            .graphicsLayer {
+                if (animateFromBottom) {
+                    translationY = size.height * slideProgress
+                    alpha = 1f - slideProgress
+                }
+            }
             .clipToBounds()
-            .then(
-                if (visible || keepFullSize) {
-                    Modifier.clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {},
-                    )
-                } else {
-                    Modifier
-                },
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {},
             ),
     ) {
         content()

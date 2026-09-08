@@ -322,9 +322,9 @@ internal fun MusicItemRow(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         AsyncImage(
-            item.thumbnail,
-            item.title,
-            Modifier.size(58.dp).clip(if (round) CircleShape else RoundedCornerShape(6.dp)).background(Color.DarkGray),
+            model = rememberArtworkRequest(item.thumbnail, ArtworkSizes.ListThumb),
+            contentDescription = item.title,
+            modifier = Modifier.size(58.dp).clip(if (round) CircleShape else RoundedCornerShape(6.dp)).background(Color.DarkGray),
             contentScale = ContentScale.Crop,
         )
         Column(Modifier.weight(1f)) {
