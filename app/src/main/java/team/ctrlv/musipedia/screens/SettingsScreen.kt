@@ -102,7 +102,7 @@ internal fun SettingsScreen(
             }
         }
         Spacer(Modifier.weight(1f))
-        Text("App version 1.0.0", Modifier.padding(bottom = 92.dp), color = mutedColor, fontSize = 10.sp)
+        Text("App version 1.0.1", Modifier.padding(bottom = 92.dp), color = mutedColor, fontSize = 10.sp)
     }
     if (showAbout) AboutMusiPediaDialog(onDismiss = { showAbout = false })
 }
